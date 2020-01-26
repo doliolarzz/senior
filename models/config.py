@@ -2,6 +2,7 @@ import torch
 from model import activation
 
 config = {
+    'DATA_PATH': './data',
     'DEVICE': torch.device('cuda'),
     'IN_LEN': 6,
     'OUT_LEN': 18,
