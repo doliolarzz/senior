@@ -65,7 +65,7 @@ def fp_fn_image(gt, pred, config=None, threshold=125):
     return error
 
 
-def fp_fn_image_csi(gt, pred, threshold):
+def fp_fn_image_csi(pred, gt, threshold):
     # categorize
     gt, pred = gt.copy(), pred.copy()
     gt[gt < threshold] = 0
