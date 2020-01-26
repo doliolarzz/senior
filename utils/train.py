@@ -6,14 +6,17 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from generators import DataGenerator
 
+
 def k_train(k_fold, model, optimizer, loss_func, lr_scheduler, 
-            batch_size, max_iterations, eval_every=1):
+            batch_size, max_iterations, eval_every=8):
 
     data_gen = DataGenerator()
+    writer = SummaryWriter(log_dir)
+
     for k in range(k_fold):
 
         k_model = model()
-        train_loss = 0
+        train_loss = 0.0
 
         for i in tqdm(range(1, max_iterations)):
 
@@ -30,7 +33,8 @@ def k_train(k_fold, model, optimizer, loss_func, lr_scheduler,
                 train_loss += loss.item()
 
                 if (i * b) % eval_every == 0:
-                    train_csi = 0
-                    train_loss = 0
+                    train_csi = 0.0
+
+                    train_loss = 0.0
 
         data_gen.shuffle()
