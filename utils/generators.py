@@ -28,6 +28,12 @@ class DataGenerator():
         #get new one and return
         return None, None
 
+    def get_val(self, i):
+        
+        #Clean previous by del
+        #get new one and return
+        return None, None
+
     def shuffle(self):
         self.indices = np.arange(self.current_idx)
         np.random.shuffle(self.indices)
@@ -35,5 +41,5 @@ class DataGenerator():
     def n_train_batch(self):
         return int(np.ceil(self.current_idx/self.batch_size))
 
-    def size(self):
-        None
+    def n_val_batch(self):
+        return int(np.ceil(self.current_idx/self.batch_size))

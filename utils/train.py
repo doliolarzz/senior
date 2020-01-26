@@ -19,6 +19,7 @@ def k_train(k_fold, model, optimizer, loss_func, lr_scheduler,
 
         k_model = model()
         data_gen.set_k(k)
+        data_gen.shuffle()
         train_loss = 0.0
         train_csi = 0.0
         train_count = 0
@@ -80,7 +81,5 @@ def k_train(k_fold, model, optimizer, loss_func, lr_scheduler,
                         'model_f{}__i{}.pth'.format(k, i_batch)))
 
                 i_batch += 1
-        
-        data_gen.shuffle()
         
     writer.close()
