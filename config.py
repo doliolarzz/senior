@@ -2,7 +2,7 @@ import torch
 from model import activation
 
 config = {
-    'DATA_PATH': './data',
+    'DATA_PATH': '/media/doliolarzz/Ubuntu_data/wni_data/201807/',
     'DEVICE': torch.device('cuda'),
     'IN_LEN': 6,
     'OUT_LEN': 18,

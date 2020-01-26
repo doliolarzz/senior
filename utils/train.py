@@ -3,7 +3,7 @@ import torch
 from torch.optim import lr_scheduler
 import numpy as np
 from tqdm import tqdm
-from ..models.config import config
+from ..config import config
 from tensorboardX import SummaryWriter
 from generators import DataGenerator
 from evaluators import fp_fn_image_csi
@@ -15,7 +15,7 @@ def k_train(k_fold, model, optimizer, loss_func, lr_scheduler,
         batch_size, config['IN_LEN'], config['OUT_LEN'])
     writer = SummaryWriter(os.path.join(save_dir, 'train_logs'))
 
-    for k in range(k_fold):
+    for k in range(1, k_fold + 1):
 
         k_model = model()
         data_gen.set_k(k)

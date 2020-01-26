@@ -1,6 +1,6 @@
 from torch import nn
 import torch
-from config import config
+from ..config import config
 
 class ConvLSTM(nn.Module):
     def __init__(self, input_channel, num_filter, b_h_w, kernel_size, stride=1, padding=1):
