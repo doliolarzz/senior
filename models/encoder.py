@@ -1,6 +1,6 @@
 from torch import nn
 import torch
-from utils import make_layers
+from models.utils import make_layers
 
 class Encoder(nn.Module):
     def __init__(self, subnets, rnns):

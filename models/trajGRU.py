@@ -1,7 +1,7 @@
 import torch
 from torch import nn
-from ..config import config
-from model import activation
+from config import config
+from models.model import activation
 import torch.nn.functional as F
 
 # input: B, C, H, W

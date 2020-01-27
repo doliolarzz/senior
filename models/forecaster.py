@@ -1,7 +1,7 @@
-from torch import nn
 import torch
-from utils import make_layers
-from ..config import config
+from torch import nn
+from models.utils import make_layers
+from config import config
 import logging
 
 class Forecaster(nn.Module):

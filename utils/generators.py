@@ -1,7 +1,8 @@
 import os, glob
+import torch
 import cv2
 import numpy as np
-from ..config import config
+from config import config
 
 def get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2):
     if (crop_lat1 < lat_min) | (crop_lat2 > lat_max) | (crop_lon1 < lon_min) | (crop_lon2> lon_max) :
@@ -35,11 +36,11 @@ class DataGenerator():
         self.out_len = out_len
         self.windows_size = windows_size
         self.current_k = 1
-        self.files = sorted([file for file in glob.glob('/media/doliolarzz/Ubuntu_data/wni_data/201807/*/*.bin')])
+        self.files = sorted([file for file in glob.glob(data_path)])
         self.n_files = len(self.files) - windows_size + 1
-        self.set_k(1)
         self.n_test = int(self.n_files / 5)
         self.n_val = self.n_files - int(self.n_files / 2) - self.n_test
+        self.set_k(1)
         self.last_train = None
         self.last_val = None
 
@@ -49,10 +50,10 @@ class DataGenerator():
         self.shuffle()
 
     def get_data(self, indices):
-        sliced_data = np.zeros((self.windows_size, len(indices), h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
-        for i in indices:
+        sliced_data = np.zeros((self.windows_size, len(indices), h2 - h1, w2 - w1), dtype=np.float32)
+        for i, idx in enumerate(indices):
             for j in range(self.windows_size):
-                raw_data[j, i] = np.fromfile(self.files[i + j], dtype=np.float32).reshape((height, width))[h1 : h2 + 1, w1 : w2 + 1]
+                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h1 : h2, w1 : w2]
         return sliced_data
 
     def get_train(self, i):
@@ -60,10 +61,9 @@ class DataGenerator():
         if self.last_train is not None:
             del self.last_train
             torch.cuda.empty_cache()
-
-        idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices)]
+        idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
         self.last_train = torch.from_numpy(self.get_data(idx)).to(config['DEVICE'])
-        return self.last_train[:self.in_len], self.last_train[self.in_len:]
+        return self.last_train[:self.in_len,:,None], self.last_train[self.in_len:,:,None]
 
     def get_val(self, i):
         
@@ -71,9 +71,9 @@ class DataGenerator():
             del self.last_val
             torch.cuda.empty_cache()
 
-        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices)]
+        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
         self.last_val = torch.from_numpy(self.get_data(idx)).to(config['DEVICE'])
-        return self.last_val[:self.in_len], self.last_val[self.in_len:]
+        return self.last_val[:self.in_len,:,None], self.last_val[self.in_len:,:,None]
 
     def shuffle(self):
         self.train_indices = np.arange(self.current_idx)
