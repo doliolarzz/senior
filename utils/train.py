@@ -12,14 +12,13 @@ def k_train(k_fold, model, optimizer, loss_func, lr_scheduler,
             batch_size, max_iterations, save_dir, eval_every=50, checkpoint_every=1000):
 
     data_gen = DataGenerator(config['DATA_PATH'], k_fold, 
-        batch_size, config['IN_LEN'], config['OUT_LEN'])
+        batch_size, config['IN_LEN'], config['OUT_LEN'], config['IN_LEN'] + config['OUT_LEN'])
     writer = SummaryWriter(os.path.join(save_dir, 'train_logs'))
 
     for k in range(1, k_fold + 1):
 
         k_model = model()
         data_gen.set_k(k)
-        data_gen.shuffle()
         train_loss = 0.0
         train_csi = 0.0
         train_count = 0
