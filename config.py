@@ -6,6 +6,6 @@ config = {
     'DEVICE': torch.device('cuda'),
     'IN_LEN': 6,
     'OUT_LEN': 18,
-    'BATCH_SIZE': 1,
+    'BATCH_SIZE': 2,
     'RNN_ACT_TYPE': activation('leaky', negative_slope=0.2, inplace=True),
 }

@@ -9,7 +9,7 @@ from utils.generators import DataGenerator
 from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 
-def k_train(k_fold, k_model, optimizer, loss_func, lr_scheduler,
+def k_train(k_fold, model, loss_func,
             batch_size, max_iterations, save_dir='./logs', eval_every=50, checkpoint_every=1000):
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
@@ -23,7 +23,7 @@ def k_train(k_fold, k_model, optimizer, loss_func, lr_scheduler,
 
     for k in range(1, k_fold + 1):
 
-        # k_model, optimizer, lr_scheduler = model()
+        k_model, optimizer, lr_scheduler = model()
         data_gen.set_k(k)
         train_loss = 0.0
         train_csi = 0.0
