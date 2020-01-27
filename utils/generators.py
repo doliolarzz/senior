@@ -1,19 +1,42 @@
 import os, glob
+import cv2
 import numpy as np
 from ..config import config
 
+def get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2):
+    if (crop_lat1 < lat_min) | (crop_lat2 > lat_max) | (crop_lon1 < lon_min) | (crop_lon2> lon_max) :
+        print("Crop boundary is out of bound.")
+        return
+    
+    lat_min_idx = round((crop_lat1 - lat_min)/(lat_max - lat_min)*height) # min row idx, num rows = height
+    lat_max_idx = round((crop_lat2 - lat_min)/(lat_max - lat_min)*height) # max row idx, num rows = height
+    lon_min_idx = round((crop_lon1 - lon_min)/(lon_max - lon_min)*width)  # min col idx, num cols = height
+    lon_max_idx = round((crop_lon2 - lon_min)/(lon_max - lon_min)*width)  # max col idx, num cols = height    
+    return height - lat_max_idx, height - lat_min_idx, lon_min_idx, lon_max_idx
+
+height, width = (3360, 2560)
+lat_min = 20.005
+lat_max = 47.9958
+lon_min = 118.006
+lon_max = 149.994
+crop_lat1 = 31
+crop_lat2 = 37
+crop_lon1 = 127
+crop_lon2 = 142
+h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2)
+
 class DataGenerator():
 
-    def __init__(self, data, k_fold, batch_size, in_len, out_len, windows_size):
+    def __init__(self, data_path, k_fold, batch_size, in_len, out_len, windows_size):
 
         self.k_fold = k_fold
         self.batch_size = batch_size
         self.in_len = in_len
         self.out_len = out_len
+        self.windows_size = windows_size
         self.current_k = 1
-        self.data = torch.from_numpy(data.astype(np.float32)).to(config['DEVICE'])
-        self.slided_data = self.data.unfold(0, windows_size, 1).permute(3, 0, 1, 2)[:, :, None, :]
-        self.n_files = self.slided_data.shape[1]
+        self.files = sorted([file for file in glob.glob('/media/doliolarzz/Ubuntu_data/wni_data/201807/*/*.bin')])
+        self.n_files = len(self.files) - windows_size + 1
         self.set_k(1)
         self.n_test = int(self.n_files / 5)
         self.n_val = self.n_files - int(self.n_files / 2) - self.n_test
@@ -25,27 +48,32 @@ class DataGenerator():
         self.current_idx = int(self.n_files / 2) + int(self.n_val * (k - 1) / self.k_fold)
         self.shuffle()
 
+    def get_data(self, indices):
+        sliced_data = np.zeros((self.windows_size, len(indices), h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
+        for i in indices:
+            for j in range(self.windows_size):
+                raw_data[j, i] = np.fromfile(self.files[i + j], dtype=np.float32).reshape((height, width))[h1 : h2 + 1, w1 : w2 + 1]
+        return sliced_data
+
     def get_train(self, i):
 
         if self.last_train is not None:
-            del self.last_train[0]
-            del self.last_train[1]
+            del self.last_train
             torch.cuda.empty_cache()
 
         idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices)]
-        self.last_train = (self.slided_data[:self.in_len, idx], self.slided_data[self.in_len:, idx])
-        return self.last_train
+        self.last_train = torch.from_numpy(self.get_data(idx)).to(config['DEVICE'])
+        return self.last_train[:self.in_len], self.last_train[self.in_len:]
 
     def get_val(self, i):
         
         if self.last_val is not None:
-            del self.last_val[0]
-            del self.last_val[1]
+            del self.last_val
             torch.cuda.empty_cache()
 
         idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices)]
-        self.last_val = (self.slided_data[:self.in_len, idx], self.slided_data[self.in_len:, idx])
-        return self.val_indices
+        self.last_val = torch.from_numpy(self.get_data(idx)).to(config['DEVICE'])
+        return self.last_val[:self.in_len], self.last_val[self.in_len:]
 
     def shuffle(self):
         self.train_indices = np.arange(self.current_idx)
