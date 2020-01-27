@@ -11,7 +11,7 @@ from net_params import convlstm_encoder_params, convlstm_forecaster_params
 
 k_fold = 3
 batch_size = 1
-max_iterations = 100000
+max_iterations = 2
 test_iteration_interval = 1000
 test_and_save_checkpoint_iterations = 1000
 LR_step_size = 20000
