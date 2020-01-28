@@ -88,4 +88,4 @@ class DataGenerator():
         return int(np.ceil(self.current_idx/self.batch_size))
 
     def n_val_batch(self):
-        return int(np.ceil(self.current_idx/self.batch_size))
+        return int(np.ceil(self.val_indices.shape[0]/self.batch_size))

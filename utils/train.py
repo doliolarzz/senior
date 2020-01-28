@@ -28,7 +28,7 @@ def k_train(k_fold, model, loss_func,
         train_loss = 0.0
         train_csi = 0.0
         train_count = 0
-        i_batch = 1
+        i_batch = 0
         
         pbar = tqdm(range(1, max_iterations))
         for itera in pbar:
@@ -37,7 +37,7 @@ def k_train(k_fold, model, loss_func,
             pbar_b = tqdm(range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
-                pbar.set_description("Training at batch %d / %d" % (i_batch - 1, n_train_batch))
+                pbar.set_description("Training at batch %d / %d" % (i_batch, n_train_batch))
 
                 train_data, train_label = data_gen.get_train(b)
                 k_model.train()
@@ -68,7 +68,7 @@ def k_train(k_fold, model, loss_func,
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
                             val_count += val_data.shape[1]
-                            pbar.set_description("Validating at batch %d / %d" % (i_batch - 1, n_val_batch))
+                            pbar.set_description("Validating at batch %d / %d" % (b_val, n_val_batch))
 
                     train_loss /= train_count
                     train_csi /= train_count
