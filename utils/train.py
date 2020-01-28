@@ -49,7 +49,7 @@ def k_train(k_fold, model, loss_func,
                 optimizer.step()
                 lr_scheduler.step()
                 train_loss += loss.item()
-                train_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
+                train_csi += fp_fn_image_csi(output.cpu().detach().numpy()*150, train_label.cpu().numpy()*150)
                 train_count += 1
 
                 if i_batch % eval_every == 0:
@@ -66,7 +66,7 @@ def k_train(k_fold, model, loss_func,
                             output = k_model(val_data)
                             loss = loss_func(output, val_label)
                             val_loss += loss.item()
-                            val_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
+                            val_csi += fp_fn_image_csi(output.cpu().detach().numpy()*150, train_label.cpu().numpy()*150)
                             val_count += 1
                             pbar.set_description("Fold %d Validating at batch %d / %d" % (k, b_val, n_val_batch))
 
