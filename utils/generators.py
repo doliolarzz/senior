@@ -61,6 +61,7 @@ class DataGenerator():
         if self.last_train is not None:
             del self.last_train
             torch.cuda.empty_cache()
+            
         idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
         self.last_train = torch.from_numpy(self.get_data(idx)).to(config['DEVICE'])
         return self.last_train[:self.in_len,:,None], self.last_train[self.in_len:,:,None]

@@ -50,7 +50,7 @@ def k_train(k_fold, model, loss_func,
                 lr_scheduler.step()
                 train_loss += loss.item()
                 train_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
-                train_count += train_data.shape[1]
+                train_count += 1
 
                 if i_batch % eval_every == 0:
 
@@ -61,13 +61,13 @@ def k_train(k_fold, model, loss_func,
                     with torch.no_grad():
                         k_model.eval()
                         n_val_batch = data_gen.n_val_batch()
-                        for b_val in range(min(n_val_batch, 5)):
+                        for b_val in np.random.choice(n_val_batch, 20): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
                             loss = loss_func(output, val_label)
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
-                            val_count += val_data.shape[1]
+                            val_count += 1
                             pbar.set_description("Fold %d Validating at batch %d / %d" % (k, b_val, n_val_batch))
 
                     train_loss /= train_count
