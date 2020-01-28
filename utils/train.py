@@ -10,7 +10,7 @@ from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 
 def k_train(k_fold, model, loss_func,
-            batch_size, max_iterations, save_dir='./logs', eval_every=500, checkpoint_every=1000):
+            batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
@@ -30,14 +30,14 @@ def k_train(k_fold, model, loss_func,
         train_count = 0
         i_batch = 0
         
-        pbar = tqdm(range(1, max_iterations))
+        pbar = tqdm(range(1, max_iterations + 1))
         for itera in pbar:
             
             n_train_batch = data_gen.n_train_batch()
             pbar_b = tqdm(range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
-                pbar.set_description("Training at batch %d / %d" % (i_batch, n_train_batch))
+                pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
 
                 train_data, train_label = data_gen.get_train(b)
                 k_model.train()
@@ -61,26 +61,26 @@ def k_train(k_fold, model, loss_func,
                     with torch.no_grad():
                         k_model.eval()
                         n_val_batch = data_gen.n_val_batch()
-                        for b_val in range(n_val_batch):
+                        for b_val in range(min(n_val_batch, 5)):
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
                             loss = loss_func(output, val_label)
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(output.cpu().detach().numpy(), train_label.cpu().numpy())
                             val_count += val_data.shape[1]
-                            pbar.set_description("Validating at batch %d / %d" % (b_val, n_val_batch))
+                            pbar.set_description("Fold %d Validating at batch %d / %d" % (k, b_val, n_val_batch))
 
                     train_loss /= train_count
                     train_csi /= train_count
                     val_loss /= val_count
                     val_csi /= val_count
 
-                    writer.add_scalars('loss', {
+                    writer.add_scalars('loss/'+str(k), {
                         'train': train_loss,
                         'valid': val_loss
                     }, i_batch)
 
-                    writer.add_scalars('csi', {
+                    writer.add_scalars('csi/'+str(k), {
                         'train': train_csi,
                         'valid': val_csi
                     }, i_batch)
@@ -94,5 +94,10 @@ def k_train(k_fold, model, loss_func,
                         'model_f{}__i{}.pth'.format(k, i_batch)))
 
                 i_batch += 1
+        try:
+            torch.save(k_model.state_dict(), os.path.join(save_dir, 
+                            'model_f{}__i{}.pth'.format(k, i_batch)))
+        except:
+            print('cannot save model')
         
     writer.close()
