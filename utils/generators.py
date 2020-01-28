@@ -54,7 +54,7 @@ class DataGenerator():
         for i, idx in enumerate(indices):
             for j in range(self.windows_size):
                 sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h1 : h2, w1 : w2]
-        return sliced_data
+        return sliced_data / 150
 
     def get_train(self, i):
 
