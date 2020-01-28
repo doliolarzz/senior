@@ -20,16 +20,16 @@ encoder_params = [
     ],
 
     [
-        TrajGRU(input_channel=8, num_filter=64, b_h_w=(batch_size, 96, 96), zoneout=0.0, L=13,
+        TrajGRU(input_channel=8, num_filter=64, b_h_w=(batch_size, 144, 240), zoneout=0.0, L=13,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(5, 5), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE']),
 
-        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32), zoneout=0.0, L=13,
+        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 48, 80), zoneout=0.0, L=13,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(5, 5), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE']),
-        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16), zoneout=0.0, L=9,
+        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 24, 40), zoneout=0.0, L=9,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(3, 3), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE'])
@@ -48,16 +48,16 @@ forecaster_params = [
     ],
 
     [
-        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16), zoneout=0.0, L=13,
+        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 24, 40), zoneout=0.0, L=13,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(3, 3), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE']),
 
-        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32), zoneout=0.0, L=13,
+        TrajGRU(input_channel=192, num_filter=192, b_h_w=(batch_size, 48, 80), zoneout=0.0, L=13,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(5, 5), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE']),
-        TrajGRU(input_channel=64, num_filter=64, b_h_w=(batch_size, 96, 96), zoneout=0.0, L=9,
+        TrajGRU(input_channel=64, num_filter=64, b_h_w=(batch_size, 144, 240), zoneout=0.0, L=9,
                 i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                 h2h_kernel=(5, 5), h2h_dilate=(1, 1),
                 act_type=config['RNN_ACT_TYPE'])
