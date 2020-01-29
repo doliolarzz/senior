@@ -39,7 +39,7 @@ def k_train(k_fold, model, loss_func,
         for itera in pbar:
             
             n_train_batch = data_gen.n_train_batch()
-            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 300))#range(data_gen.n_train_batch()))
+            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 3500))#range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
                 pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
