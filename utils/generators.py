@@ -65,7 +65,7 @@ class DataGenerator():
             for j in range(self.windows_size):
                 h, w = hw_pos[ch]
                 sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h : h + input_size, w : w + input_size]
-        return c_f * (c_h + np.log(sliced_data)) 
+        return c_f * (c_h + np.log(sliced_data + 1e-4)) 
 
     def get_train(self, i):
 
@@ -101,7 +101,7 @@ class DataGenerator():
         self.val_indices = np.hstack([np.repeat(idx_val[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_val.shape[0])[:,None]])
         
     def n_train_batch(self):
-        return int(np.ceil(self.current_idx/self.batch_size))
+        return int(np.ceil(self.train_indices.shape[0]/self.batch_size))
 
     def n_val_batch(self):
         return int(np.ceil(self.val_indices.shape[0]/self.batch_size))

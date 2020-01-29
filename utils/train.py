@@ -9,6 +9,11 @@ from utils.generators import DataGenerator
 from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 
+c_back = 60 / np.power(200, 5/8)
+
+def dbz_mm(value):
+    return np.power(10, value/16) * c_back
+
 def k_train(k_fold, model, loss_func,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
 
@@ -34,7 +39,7 @@ def k_train(k_fold, model, loss_func,
         for itera in pbar:
             
             n_train_batch = data_gen.n_train_batch()
-            pbar_b = tqdm(range(data_gen.n_train_batch()))
+            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 300))#range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
                 pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
@@ -49,7 +54,7 @@ def k_train(k_fold, model, loss_func,
                 optimizer.step()
                 lr_scheduler.step()
                 train_loss += loss.item()
-                train_csi += fp_fn_image_csi(output.cpu().detach().numpy()*150, train_label.cpu().numpy()*150)
+                train_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(train_label.cpu().numpy()))
                 train_count += 1
 
                 if i_batch % eval_every == 0:
@@ -61,14 +66,14 @@ def k_train(k_fold, model, loss_func,
                     with torch.no_grad():
                         k_model.eval()
                         n_val_batch = data_gen.n_val_batch()
-                        for b_val in np.random.choice(n_val_batch, 20): #range(n_val_batch)
+                        for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
                             loss = loss_func(output, val_label)
                             val_loss += loss.item()
-                            val_csi += fp_fn_image_csi(output.cpu().detach().numpy()*150, train_label.cpu().numpy()*150)
+                            val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(train_label.cpu().numpy()))
                             val_count += 1
-                            pbar.set_description("Fold %d Validating at batch %d / %d" % (k, b_val, n_val_batch))
+                            pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 30))
 
                     train_loss /= train_count
                     train_csi /= train_count
