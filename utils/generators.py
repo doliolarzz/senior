@@ -3,6 +3,7 @@ import torch
 import cv2
 import numpy as np
 from config import config
+import itertools
 
 def get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2):
     if (crop_lat1 < lat_min) | (crop_lat2 > lat_max) | (crop_lon1 < lon_min) | (crop_lon2> lon_max) :
@@ -25,6 +26,15 @@ crop_lat2 = 37
 crop_lon1 = 127
 crop_lon2 = 142
 h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2)
+c_f = 16 / (60 * np.log(10))
+c_h = 5 / 8 * np.log(200)
+strides = 100
+input_size = config['IMG_SIZE']
+h_pos = [i for i in range(0, height - input_size, strides)]
+w_pos = [i for i in range(0, width - input_size, strides)]
+hw_pos = [[h, w] for h in h_pos[int(0.3*len(h_pos)):-int(0.3*len(h_pos))] for w in w_pos[int(0.3*len(w_pos)):-int(0.3*len(w_pos))]]
+n_hw_pos = len(hw_pos)
+n_hw_get = 10
 
 class DataGenerator():
 
@@ -50,11 +60,12 @@ class DataGenerator():
         self.shuffle()
 
     def get_data(self, indices):
-        sliced_data = np.zeros((self.windows_size, len(indices), h2 - h1, w2 - w1), dtype=np.float32)
-        for i, idx in enumerate(indices):
+        sliced_data = np.zeros((self.windows_size, len(indices), input_size, input_size), dtype=np.float32)
+        for i, [idx, ch] in enumerate(indices):
             for j in range(self.windows_size):
-                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h1 : h2, w1 : w2]
-        return sliced_data / 150
+                h, w = hw_pos[ch]
+                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h : h + input_size, w : w + input_size]
+        return c_f * (c_h + np.log(sliced_data)) 
 
     def get_train(self, i):
 
@@ -77,13 +88,17 @@ class DataGenerator():
         return self.last_val[:self.in_len,:,None], self.last_val[self.in_len:,:,None]
 
     def shuffle(self):
-        self.train_indices = np.arange(self.current_idx)
+        idx_train = np.arange(self.current_idx)
+        idx_hw = np.arange(n_hw_pos)
+        self.train_indices = np.hstack([np.repeat(idx_train[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_train.shape[0])[:,None]])
         np.random.shuffle(self.train_indices)
 
         val_size = int(self.n_val / self.k_fold)
         if self.k_fold == self.current_k:
             val_size += self.n_val % self.k_fold
-        self.val_indices = np.arange(val_size) + self.current_idx
+        idx_val = np.arange(val_size) + self.current_idx
+        idx_hw = np.arange(n_hw_pos)
+        self.val_indices = np.hstack([np.repeat(idx_val[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_val.shape[0])[:,None]])
         
     def n_train_batch(self):
         return int(np.ceil(self.current_idx/self.batch_size))
