@@ -3,7 +3,7 @@ from models.model import activation
 
 config = {
     'DATA_PATH': '/home/warit/201807/*/*.bin',
-    'DEVICE': torch.device('cuda:1'),
+    'DEVICE': torch.device('cuda'),
     'IN_LEN': 6,
     'OUT_LEN': 18,
     'BATCH_SIZE': 2,

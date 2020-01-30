@@ -22,7 +22,7 @@ model.load_state_dict(
 path = '/media/doliolarzz/Ubuntu_data/test/*.bin'
 files = sorted([file for file in glob.glob(path)])
 try:
-    idx = next(i for i,f in enumerate(files) if os.path.basename(f) == '20190630_2000.bin')
+    idx = next(i for i,f in enumerate(files) if os.path.basename(f) == '20190908_1320.bin')
 except:
     idx = -1
     print('not found')
@@ -43,10 +43,10 @@ lat_min = 20.005
 lat_max = 47.9958
 lon_min = 118.006
 lon_max = 149.994
-crop_lat1 = 31
-crop_lat2 = 37
-crop_lon1 = 127
-crop_lon2 = 142
+crop_lat1 = 32
+crop_lat2 = 39
+crop_lon1 = 136
+crop_lon2 = 143
 h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2)
 
 data = np.zeros((config['IN_LEN']+config['OUT_LEN'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
@@ -62,5 +62,5 @@ print('rmse_all', rmse)
 print('rmse_rain', rmse_rain)
 print('rmse_non_rain', rmse_non_rain)
 
-cv2.imwrite('conv_pred_1.png', rainfall_shade(pred[-1]))
-cv2.imwrite('conv_label_1.png', rainfall_shade(data[-1]))
+cv2.imwrite('conv_pred_2.png', rainfall_shade(pred[-1]))
+cv2.imwrite('conv_label_2.png', rainfall_shade(data[-1]))
