@@ -67,7 +67,7 @@ def k_train(k_fold, model, loss_func,
                             output = k_model(val_data)
                             loss = loss_func(output, val_label)
                             val_loss += loss.item()
-                            val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(train_label.cpu().numpy()))
+                            val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
                             val_count += 1
                             pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 30))
 
