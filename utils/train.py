@@ -62,6 +62,7 @@ def k_train(k_fold, model, loss_func,
                     with torch.no_grad():
                         k_model.eval()
                         n_val_batch = data_gen.n_val_batch()
+
                         for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
@@ -69,7 +70,7 @@ def k_train(k_fold, model, loss_func,
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
                             val_count += 1
-                            pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 30))
+                            pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 20))
 
                     train_loss /= train_count
                     train_csi /= train_count

@@ -13,7 +13,15 @@ def dbz_mm(value):
 c_f = 16 / (60 * np.log(10))
 c_h = 5 / 8 * np.log(200)
 def mm_dbz(value):
-    return c_f * (c_h + np.log(value + 1e-4)) 
+    if np.any(np.isnan(value)):
+        print('contain nan')
+    if np.any(value<0):
+        print('contain minus')
+    ret_val = c_f * (c_h + np.log(value + 1e-4)) 
+    if np.any(np.isnan(ret_val)):
+        print('nooo')
+        np.savez('error.npz', e=ret_val)
+    return ret_val
 
 def pixel_to_rainfall(img, a=58.53, b=1.56):
     dBZ = pixel_to_dBZ(img)

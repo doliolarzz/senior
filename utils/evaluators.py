@@ -77,8 +77,9 @@ def fp_fn_image_csi(pred, gt, threshold=0.2):
     fp = np.sum((gt == 0) & (pred == 1))
     fn = np.sum((gt == 1) & (pred == 0))
     tp = np.sum((gt == 1) & (pred == 1))
-
-    csi = float(tp) / (fp + fn + tp) * 100
+    tn = np.sum((gt == 0) & (pred == 0))
+    
+    csi = float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100
 
     return csi
 
