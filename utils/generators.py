@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from config import config
 import itertools
+from utils.units import mm_dbz
 
 def get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2):
     if (crop_lat1 < lat_min) | (crop_lat2 > lat_max) | (crop_lon1 < lon_min) | (crop_lon2> lon_max) :
@@ -26,8 +27,6 @@ crop_lat2 = 37
 crop_lon1 = 127
 crop_lon2 = 142
 h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2)
-c_f = 16 / (60 * np.log(10))
-c_h = 5 / 8 * np.log(200)
 strides = 100
 input_size = config['IMG_SIZE']
 h_pos = [i for i in range(0, height - input_size, strides)]
@@ -65,7 +64,7 @@ class DataGenerator():
             for j in range(self.windows_size):
                 h, w = hw_pos[ch]
                 sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h : h + input_size, w : w + input_size]
-        return c_f * (c_h + np.log(sliced_data + 1e-4)) 
+        return mm_dbz(sliced_data + 1e-4)
 
     def get_train(self, i):
 

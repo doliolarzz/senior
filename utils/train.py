@@ -8,11 +8,7 @@ from tensorboardX import SummaryWriter
 from utils.generators import DataGenerator
 from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
-
-c_back = np.power(200, 5/8)
-
-def dbz_mm(value):
-    return np.power(10, value*15/4) / c_back
+from utils.units import dbz_mm
 
 def k_train(k_fold, model, loss_func,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
