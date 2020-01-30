@@ -9,10 +9,10 @@ from utils.generators import DataGenerator
 from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 
-c_back = 60 / np.power(200, 5/8)
+c_back = np.power(200, 5/8)
 
 def dbz_mm(value):
-    return np.power(10, value/16) * c_back
+    return np.power(10, value*15/4) / c_back
 
 def k_train(k_fold, model, loss_func,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
