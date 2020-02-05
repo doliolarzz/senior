@@ -12,6 +12,7 @@ from net_params import convlstm_encoder_params, convlstm_forecaster_params
 from utils.test import test
 from utils.evaluators import fp_fn_image_csi, cal_rmse_all
 from utils.visualizers import make_gif_color, rainfall_shade
+from utils.units import mm_dbz, dbz_mm
 
 encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(config['DEVICE'])
 forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1]).to(config['DEVICE'])
@@ -52,8 +53,9 @@ h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min,
 data = np.zeros((config['IN_LEN']+config['OUT_LEN'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
 for i, file in enumerate(files[idx:idx+config['IN_LEN']+config['OUT_LEN']]):
     data[i, :] = np.fromfile(file, dtype=np.float32).reshape((height, width))[h1 : h2 + 1, w1 : w2 + 1]
-
+data = mm_dbz(data)
 pred = test(data[:config['IN_LEN']], model)
+data = dbz_mm(data)
 
 print('CSI: ', fp_fn_image_csi(pred[-1], data[-1]))
 # print('RMSE: ', np.sqrt(np.mean(np.square(data[-1] - pred[-1]))))
