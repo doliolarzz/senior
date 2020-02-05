@@ -25,11 +25,13 @@ def k_train(k_fold, model, loss_func,
     for k in range(1, k_fold + 1):
 
         k_model, optimizer, lr_scheduler = model()
+        
         data_gen.set_k(k)
         train_loss = 0.0
         train_csi = 0.0
         train_count = 0
         i_batch = 0
+        best_val_loss = np.inf
         
         pbar = tqdm(range(1, max_iterations + 1))
         for itera in pbar:
@@ -90,15 +92,20 @@ def k_train(k_fold, model, loss_func,
                     train_loss = 0.0
                     train_count = 0
                     train_csi = 0.0
+                    
+                    if val_loss <= best_val_loss:
+                        torch.save(k_model.state_dict(), os.path.join(save_dir, 
+                            'model_f{}_i{}_best.pth'.format(k, i_batch)))
+                        best_val_loss = val_loss
                 
                 if i_batch % checkpoint_every == 0:
                     torch.save(k_model.state_dict(), os.path.join(save_dir, 
-                        'model_f{}__i{}.pth'.format(k, i_batch)))
+                        'model_f{}_i{}.pth'.format(k, i_batch)))
 
                 i_batch += 1
         try:
             torch.save(k_model.state_dict(), os.path.join(save_dir, 
-                            'model_f{}__i{}.pth'.format(k, i_batch)))
+                            'model_f{}_i{}.pth'.format(k, i_batch)))
         except:
             print('cannot save model')
         

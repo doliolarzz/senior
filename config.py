@@ -2,8 +2,8 @@ import torch
 from models.model import activation
 
 config = {
-    'DATA_PATH': '/home/warit/201807/*/*.bin',
-    'DEVICE': torch.device('cuda:1'),
+    'DATA_PATH': '/data/wni_dataset/*/*/*.bin',
+    'DEVICE': torch.device('cuda:0'),
     'IN_LEN': 6,
     'OUT_LEN': 18,
     'BATCH_SIZE': 2,

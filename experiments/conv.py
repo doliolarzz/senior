@@ -14,9 +14,9 @@ batch_size = config['BATCH_SIZE']
 max_iterations = 2
 test_iteration_interval = 1000
 test_and_save_checkpoint_iterations = 1000
-LR_step_size = 20000
+LR_step_size = 1000
 gamma = 0.7
-LR = 1e-4
+LR = 1e-3
 mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
 
 def get_model_set():

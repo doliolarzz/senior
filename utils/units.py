@@ -8,19 +8,17 @@ def dBZ_to_pixel(dBZ_img):
 
 c_back = np.power(200, 5/8)
 def dbz_mm(value):
-    return np.power(10, value*15/4) / c_back - 1e-4
+    mask = value<=0
+    ret_val = np.power(10, value*15/4) / c_back
+    ret_val[mask] = 0
+    return ret_val
 
 c_f = 16 / (60 * np.log(10))
 c_h = 5 / 8 * np.log(200)
 def mm_dbz(value):
-    if np.any(np.isnan(value)):
-        print('contain nan')
-    if np.any(value<0):
-        print('contain minus')
-    ret_val = c_f * (c_h + np.log(value + 1e-4)) 
-    if np.any(np.isnan(ret_val)):
-        print('nooo')
-        np.savez('error.npz', e=ret_val)
+    mask = value!=0
+    ret_val = c_f * (c_h + np.log(value, where=mask, out=value*np.nan))
+    ret_val[np.isnan(ret_val)] = -1
     return ret_val
 
 def pixel_to_rainfall(img, a=58.53, b=1.56):
