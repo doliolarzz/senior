@@ -107,5 +107,20 @@ def fp_fn_image_hit(gt, pred, threshold, mask=None):
 
     return hit
 
+def cal_rmse(pred, label):
+    return np.sqrt(np.mean(np.square(pred - label)))
+
+def cal_rmse_all(pred, label, thres=0.2):
+    pred = pred.reshape(-1)
+    label = label.reshape(-1)
+
+    mask = label>thres
+
+    rmse = cal_rmse(pred, label)
+    rmse_rain = cal_rmse(pred[mask], label[mask])
+    rmse_non_rain = cal_rmse(pred[~mask], label[~mask])
+
+    return rmse, rmse_rain, rmse_non_rain
+
 def get_summary_table():
     return None

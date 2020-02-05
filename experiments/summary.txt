@@ -1,0 +1,42 @@
+For test case No. 1,
+- Date & Time: 30th June, 2019 at 20:40-20:50PM (2 images as input)
+- Duration of prediction: Next 3 hours
+- Geographical Coordinates:
+  - Lat1 = 31 & Lat2 = 37
+  - lon1=127 & long2 = 142
+- Size: 721 x 1201 (Height x Width),
+conv
+CSI:  56.99973386404835
+rmse_all 3.8549047836335686
+rmse_rain 7.6899677520984335
+rmse_non_rain 0.6520366031530824
+
+Test Case No. 2
+2019-09-08
+Event: Typhoon No.15 Faxai
+Input Images: 14:00-14:10 (two images)
+Prediction Period: next 3 hours
+Cropped Coordinates:
+Lat1, Lat2 = 32, 39
+Lon1, Lon2 = 136,143
+Resolution (after cropping): 781*561 (please check again after cropping)
+conv
+CSI:  54.716162604087785
+rmse_all 5.2453377523392275
+rmse_rain 12.228075346515414
+rmse_non_rain 0.2715549142391779
+
+Test Case No. 3
+2019-10-12
+Event: Typhoon No.19 Hagibis
+Input Images: 10:10-10:20AM (two images)
+Prediction Period: next 3 hours
+Cropped Coordinates: next 3 hours
+Lat1, Lat2 = 30, 45
+Long1, Lon2 = 132, 147
+Resolution (after cropping): 1801x1201 (please check again after cropping)
+conv
+CSI:  66.05013422126477
+rmse_all 3.9739044052346846
+rmse_rain 9.217914028257931
+rmse_non_rain 0.45193490498042355

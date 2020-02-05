@@ -54,7 +54,7 @@ class DataGenerator():
         self.last_train = None
         self.last_val = None
         
-    def check_missing_data(files):
+    def check_missing_data(self, files):
         file_dt = [datetime.strptime(os.path.basename(file).split('.')[0], '%Y%m%d_%H%M') for file in files]
         time_delta = np.vectorize(lambda x: x.seconds//60)(np.array(file_dt[1:]) - np.array(file_dt[:-1]))
         missings = np.where(time_delta>10)[0]
