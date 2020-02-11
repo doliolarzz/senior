@@ -3,7 +3,7 @@ from collections import OrderedDict
 from torch.optim import lr_scheduler
 import numpy as np
 from config import config
-from models.convLSTM import ConvLSTM
+from models.convLSTMBN import ConvLSTM
 from models.trajGRU import TrajGRU
 
 batch_size = config['BATCH_SIZE']
@@ -87,11 +87,11 @@ convlstm_encoder_params = [
     ],
 
     [
-        ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 672, 510),
+        ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 96, 96),
                  kernel_size=3, stride=1, padding=1),
-        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 224, 170),
+        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
                  kernel_size=3, stride=1, padding=1),
-        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 112, 85),
+        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
                  kernel_size=3, stride=1, padding=1),
     ]
 ]
@@ -108,11 +108,11 @@ convlstm_forecaster_params = [
     ],
 
     [
-        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 112, 85),
+        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
                  kernel_size=3, stride=1, padding=1),
-        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 224, 170),
+        ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
                  kernel_size=3, stride=1, padding=1),
-        ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 672, 510),
+        ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 96, 96),
                  kernel_size=3, stride=1, padding=1),
     ]
 ]

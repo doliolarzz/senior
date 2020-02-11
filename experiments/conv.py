@@ -7,7 +7,7 @@ from models.forecaster import Forecaster
 from models.model import EF
 from utils.train import k_train
 from config import config
-from net_params import convlstm_encoder_params, convlstm_forecaster_params
+from net_params_BN import convlstm_encoder_params, convlstm_forecaster_params
 
 k_fold = 1
 batch_size = config['BATCH_SIZE']
@@ -16,7 +16,7 @@ test_iteration_interval = 1000
 test_and_save_checkpoint_iterations = 1000
 LR_step_size = 1000
 gamma = 0.7
-LR = 1e-3
+LR = 1e-4
 mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
 
 def get_model_set():

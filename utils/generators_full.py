@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from config import config
 import itertools
+from datetime import datetime
 from utils.units import mm_dbz
 
 def get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2):
@@ -46,12 +47,19 @@ class DataGenerator():
         self.windows_size = windows_size
         self.current_k = 1
         self.files = sorted([file for file in glob.glob(data_path)])
+        self.missings = self.check_missing_data(self.files)
         self.n_files = len(self.files) - windows_size + 1
         self.n_test = int(self.n_files / 5)
         self.n_val = self.n_files - int(self.n_files / 2) - self.n_test
         self.set_k(1)
         self.last_train = None
         self.last_val = None
+        
+    def check_missing_data(self, files):
+        file_dt = [datetime.strptime(os.path.basename(file).split('.')[0], '%Y%m%d_%H%M') for file in files]
+        time_delta = np.vectorize(lambda x: x.seconds//60)(np.array(file_dt[1:]) - np.array(file_dt[:-1]))
+        missings = np.where(time_delta>10)[0]
+        return missings
 
     def set_k(self, k):
         self.current_k = max(min(k, self.k_fold), 1)
@@ -59,12 +67,10 @@ class DataGenerator():
         self.shuffle()
 
     def get_data(self, indices):
-        sliced_data = np.zeros((self.windows_size, len(indices), input_size, input_size), dtype=np.float32)
-        for i, [idx, ch] in enumerate(indices):
+        sliced_data = np.zeros((self.windows_size, len(indices), height, width-10), dtype=np.float32)
+        for i, idx in enumerate(indices):
             for j in range(self.windows_size):
-                h, w = hw_pos[ch]
-                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[h : h + input_size, w : w + input_size]
-                
+                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((height, width))[:,5:-5]
         return mm_dbz(sliced_data)
 
     def get_train(self, i):
@@ -88,17 +94,19 @@ class DataGenerator():
         return self.last_val[:self.in_len,:,None], self.last_val[self.in_len:,:,None]
 
     def shuffle(self):
-        idx_train = np.arange(self.current_idx)
-        idx_hw = np.arange(n_hw_pos)
-        self.train_indices = np.hstack([np.repeat(idx_train[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_train.shape[0])[:,None]])
+        self.train_indices = np.arange(self.current_idx)
+        for i in self.missings:
+            for j in range(self.windows_size):
+                self.train_indices = self.train_indices[self.train_indices!=i+j]
         np.random.shuffle(self.train_indices)
 
         val_size = int(self.n_val / self.k_fold)
         if self.k_fold == self.current_k:
             val_size += self.n_val % self.k_fold
-        idx_val = np.arange(val_size) + self.current_idx
-        idx_hw = np.arange(n_hw_pos)
-        self.val_indices = np.hstack([np.repeat(idx_val[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_val.shape[0])[:,None]])
+        self.val_indices = np.arange(val_size) + self.current_idx
+        for i in self.missings:
+            for j in range(self.windows_size):
+                self.val_indices = self.val_indices[self.val_indices!=i+j]
         
     def n_train_batch(self):
         return int(np.ceil(self.train_indices.shape[0]/self.batch_size))

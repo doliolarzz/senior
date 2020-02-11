@@ -3,7 +3,7 @@ from collections import OrderedDict
 from torch.optim import lr_scheduler
 import numpy as np
 from config import config
-from models.convLSTM import ConvLSTM
+from models.convLSTMBN import ConvLSTM
 from models.trajGRU import TrajGRU
 
 batch_size = config['BATCH_SIZE']
