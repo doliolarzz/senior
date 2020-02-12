@@ -11,7 +11,7 @@ from datetime import datetime
 from utils.units import dbz_mm
 
 def k_train(k_fold, model, loss_func,
-            batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
+            batch_size, max_iterations, save_dir='./logs', eval_every=50, checkpoint_every=1000):
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
