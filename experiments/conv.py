@@ -5,7 +5,7 @@ from torch.optim import lr_scheduler
 from models.encoder import Encoder
 from models.forecaster import Forecaster
 from models.model import EF
-from utils.train import k_train
+from utils.train_multitask import k_train
 from config import config
 from net_params_BN import convlstm_encoder_params, convlstm_forecaster_params
 
