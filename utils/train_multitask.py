@@ -10,6 +10,9 @@ from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 from utils.units import dbz_mm
 
+mse = torch.nn.MSELoss().to(config['DEVICE'])
+cls = torch.nn.BCEWithLogitsLoss().to(config['DEVICE'])
+
 def k_train(k_fold, model, loss_func,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
 
@@ -46,7 +49,9 @@ def k_train(k_fold, model, loss_func,
                 k_model.train()
                 optimizer.zero_grad()
                 output = k_model(train_data)
-                loss = loss_func(output, train_label)
+                loss1 = mse(output, train_label)
+                loss2 = cls(output, train_label)
+                loss = loss1 + loss2
                 loss.backward()
                 torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
                 optimizer.step()
@@ -68,7 +73,9 @@ def k_train(k_fold, model, loss_func,
                         for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
-                            loss = loss_func(output, val_label)
+                            loss1 = mse(output, val_label)
+                            loss2 = cls(output, val_label)
+                            loss = loss1 + loss2
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
                             val_count += 1

@@ -15,9 +15,7 @@ def make_layers(block):
             transposeConv2d = nn.ConvTranspose2d(in_channels=v[0], out_channels=v[1],
                                                  kernel_size=v[2], stride=v[3],
                                                  padding=v[4])
-            batch_norm = nn.BatchNorm2d(v[1])
             layers.append((layer_name, transposeConv2d))
-            layers.append(('bn_'+layer_name, batch_norm))
             if 'relu' in layer_name:
                 layers.append(('relu_' + layer_name, nn.ReLU(inplace=True)))
             elif 'leaky' in layer_name:
@@ -26,9 +24,7 @@ def make_layers(block):
             conv2d = nn.Conv2d(in_channels=v[0], out_channels=v[1],
                                kernel_size=v[2], stride=v[3],
                                padding=v[4])
-            batch_norm = nn.BatchNorm2d(v[1])
             layers.append((layer_name, conv2d))
-            layers.append(('bn_'+layer_name, batch_norm))
             if 'relu' in layer_name:
                 layers.append(('relu_' + layer_name, nn.ReLU(inplace=True)))
             elif 'leaky' in layer_name:

@@ -5,6 +5,7 @@ import numpy as np
 from config import config
 import itertools
 from utils.units import mm_dbz
+np.random.seed(42)
 
 missings = [ 1630,  1629,  1628,  1627,  1626,  1625,  1624,  1623,  1622,
         1621,  1620,  1619,  1618,  1617,  1616,  1615,  1614,  1613,

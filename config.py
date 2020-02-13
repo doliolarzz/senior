@@ -6,7 +6,7 @@ config = {
     'DEVICE': torch.device('cuda:1'),
     'IN_LEN': 5,
     'OUT_LEN': 1,
-    'BATCH_SIZE': 2,
+    'BATCH_SIZE': 4,
     'RNN_ACT_TYPE': activation('leaky', negative_slope=0.2, inplace=True),
     'IMG_SIZE': 480,
 }
