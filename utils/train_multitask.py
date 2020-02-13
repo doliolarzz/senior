@@ -50,7 +50,7 @@ def k_train(k_fold, model, loss_func,
                 optimizer.zero_grad()
                 output = k_model(train_data)
                 loss1 = mse(output, train_label)
-                loss2 = cls(output, train_label)
+                loss2 = cls((output>=0.2).float(), (train_label>=0.2).float())
                 loss = loss1 + loss2
                 loss.backward()
                 torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
@@ -74,7 +74,7 @@ def k_train(k_fold, model, loss_func,
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
                             loss1 = mse(output, val_label)
-                            loss2 = cls(output, val_label)
+                            loss2 = cls((output>=0.2).float(), (val_label>=0.2).float())
                             loss = loss1 + loss2
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
