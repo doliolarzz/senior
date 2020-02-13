@@ -3,7 +3,7 @@ from models.model import activation
 
 config = {
     'DATA_PATH': '/mnt/raid0/wni_dataset/*/*/*.bin',
-    'DEVICE': torch.device('cuda:1'),
+    'DEVICE': torch.device('cuda:0'),
     'IN_LEN': 5,
     'OUT_LEN': 1,
     'BATCH_SIZE': 4,

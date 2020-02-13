@@ -8,17 +8,17 @@ from models.encoder import Encoder
 from models.forecaster import Forecaster
 from models.model import EF
 from config import config
-from net_params import convlstm_encoder_params, convlstm_forecaster_params
+from net_params_BN import convlstm_encoder_params, convlstm_forecaster_params
 from utils.test import test
 from utils.evaluators import fp_fn_image_csi, cal_rmse_all
 from utils.visualizers import make_gif_color, rainfall_shade
 from utils.units import mm_dbz, dbz_mm
-
+inl = 5
 encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(config['DEVICE'])
 forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1]).to(config['DEVICE'])
 model = EF(encoder, forecaster).to(config['DEVICE'])
 model.load_state_dict(
-    torch.load('/home/doliolarzz/Desktop/senior/trained/conv7000.pth', map_location='cuda'))
+    torch.load('/home/doliolarzz/Desktop/senior_trained/multi_5_1.pth', map_location='cuda'))
 
 path = '/media/doliolarzz/Ubuntu_data/test/*.bin'
 files = sorted([file for file in glob.glob(path)])
@@ -50,19 +50,37 @@ crop_lon1 = 127
 crop_lon2 = 142
 h1, h2, w1, w2 = get_crop_boundary_idx(height, width, lat_min, lat_max, lon_min, lon_max, crop_lat1, crop_lat2, crop_lon1, crop_lon2)
 
-data = np.zeros((config['IN_LEN']+config['OUT_LEN'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
-for i, file in enumerate(files[idx:idx+config['IN_LEN']+config['OUT_LEN']]):
+data = np.zeros((inl+18, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
+for i, file in enumerate(files[idx:idx+inl+18]):
     data[i, :] = np.fromfile(file, dtype=np.float32).reshape((height, width))[h1 : h2 + 1, w1 : w2 + 1]
 data = mm_dbz(data)
-pred = test(data[:config['IN_LEN']], model)
-data = dbz_mm(data)
+# pred = test(data[:config['IN_LEN']], model, weight='../utils/weight.npz', stride=240)
+data_in = data[:inl]
+pred_all = []
+for i in range(18):
+    pred = test(data_in, model, weight='../utils/weight.npz', stride=240)
+    data_in = np.concatenate([data_in[1:], mm_dbz(pred)], axis=0)
+    pred_all.append(pred.copy())
 
-print('CSI: ', fp_fn_image_csi(pred[-1], data[-1]))
+pred_all = np.array(pred_all)[:, 0]
+data = dbz_mm(data)[-18:]
+print(pred_all.shape,data.shape)
+assert pred_all.shape == data.shape
+print('CSI: ', fp_fn_image_csi(pred_all, data))
 # print('RMSE: ', np.sqrt(np.mean(np.square(data[-1] - pred[-1]))))
-rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred[-1], data[-1])
+rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred_all, data)
 print('rmse_all', rmse)
 print('rmse_rain', rmse_rain)
 print('rmse_non_rain', rmse_non_rain)
 
-cv2.imwrite('conv_pred_1.png', rainfall_shade(pred[-1]))
-cv2.imwrite('conv_label_1.png', rainfall_shade(data[-1]))
+
+path = 'conv_case_1/'
+try:
+    os.makedirs(path)
+except:
+    pass
+for i in range(pred_all.shape[0]):
+    cv2.imwrite(path+str(i)+'.png', cv2.cvtColor(np.array(pred_all[i]/60*255,dtype=np.uint8), cv2.COLOR_GRAY2BGR))
+
+# cv2.imwrite('conv_pred_1.png', rainfall_shade(pred[-1]))
+# cv2.imwrite('conv_label_1.png', rainfall_shade(data[-1]))

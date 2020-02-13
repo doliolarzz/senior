@@ -8,17 +8,17 @@ from models.encoder import Encoder
 from models.forecaster import Forecaster
 from models.model import EF
 from config import config
-from net_params import encoder_params, forecaster_params
+from net_params_BN import convlstm_encoder_params, convlstm_forecaster_params
 from utils.test import test
 from utils.evaluators import fp_fn_image_csi, cal_rmse_all
 from utils.visualizers import make_gif_color, rainfall_shade
 from utils.units import mm_dbz, dbz_mm
 
-encoder = Encoder(encoder_params[0], encoder_params[1]).to(config['DEVICE'])
-forecaster = Forecaster(forecaster_params[0], forecaster_params[1]).to(config['DEVICE'])
+encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(config['DEVICE'])
+forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1]).to(config['DEVICE'])
 model = EF(encoder, forecaster).to(config['DEVICE'])
 model.load_state_dict(
-    torch.load('/home/doliolarzz/Desktop/senior/trained/traj7000.pth', map_location='cuda'))
+    torch.load('/home/doliolarzz/Desktop/senior_trained/in5_out18.pth', map_location='cuda'))
 
 path = '/media/doliolarzz/Ubuntu_data/test/*.bin'
 files = sorted([file for file in glob.glob(path)])
@@ -54,15 +54,27 @@ data = np.zeros((config['IN_LEN']+config['OUT_LEN'], h2 - h1 + 1, w2 - w1 + 1), 
 for i, file in enumerate(files[idx:idx+config['IN_LEN']+config['OUT_LEN']]):
     data[i, :] = np.fromfile(file, dtype=np.float32).reshape((height, width))[h1 : h2 + 1, w1 : w2 + 1]
 data = mm_dbz(data)
-pred = test(data[:config['IN_LEN']], model)
-data = dbz_mm(data)
+# pred = test(data[:config['IN_LEN']], model, weight='../utils/weight.npz', stride=240)
+pred = test(data[:config['IN_LEN']], model, weight='../utils/weight.npz', stride=240)
+data = dbz_mm(data)[-config['OUT_LEN']:]
 
-print('CSI: ', fp_fn_image_csi(pred[-1], data[-1]))
+print('CSI: ', fp_fn_image_csi(pred, data))
 # print('RMSE: ', np.sqrt(np.mean(np.square(data[-1] - pred[-1]))))
-rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred[-1], data[-1])
+rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred, data)
 print('rmse_all', rmse)
 print('rmse_rain', rmse_rain)
 print('rmse_non_rain', rmse_non_rain)
 
-cv2.imwrite('traj_pred_1.png', rainfall_shade(pred[-1]))
-cv2.imwrite('traj_label_1.png', rainfall_shade(data[-1]))
+
+path = 'conv_case_1/'
+try:
+    os.makedirs(path)
+except:
+    pass
+for i in range(pred.shape[0]):
+    cv2.imwrite(path+str(i)+'.png', cv2.cvtColor(
+        np.concatenate([np.array(pred[i]/60*255,dtype=np.uint8), np.array(data[i]/60*255,dtype=np.uint8)],axis=1)
+    , cv2.COLOR_GRAY2BGR))
+
+# cv2.imwrite('conv_pred_1.png', rainfall_shade(pred[-1]))
+# cv2.imwrite('conv_label_1.png', rainfall_shade(data[-1]))
