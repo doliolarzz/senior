@@ -18,9 +18,9 @@ def predict(input, model):
 
     return output.cpu().numpy()[:, :, 0]
 
-def weight_data_generator(model, size):
+def weight_data_generator(model, size, crop=None):
 
-    data = get_weight_train_data(size)
+    data = get_weight_train_data(size, crop=crop)
 
     n, t, height, width = data.shape
     assert t == config['IN_LEN'] + config['OUT_LEN']
@@ -55,6 +55,6 @@ def weight_data_generator(model, size):
             w_end = w*config['STRIDE'] + config['IMG_SIZE']
             pred[:, :, n_h, w] += predict(input[:, i_start:i_end, -config['IMG_SIZE']:, w_start:w_end], model)
         
-        pred[:, : n_h, n_w] += predict(input[:, i_start:i_end, -config['IMG_SIZE']:, -config['IMG_SIZE']:], model)
+        pred[:, :, n_h, n_w] += predict(input[:, i_start:i_end, -config['IMG_SIZE']:, -config['IMG_SIZE']:], model)
         
-        yield pred, label
+        yield pred.reshape(-1, n_h+1, n_w+1, config['IMG_SIZE'], config['IMG_SIZE']), label[i_start:i_end].reshape(-1, height, width)
