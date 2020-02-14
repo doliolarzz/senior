@@ -36,7 +36,7 @@ def get_each_predictions(data, model):
     
     for i in range(int(np.ceil(n / config['BATCH_SIZE']))):
         i_start = i*config['BATCH_SIZE']
-        i_end = (i+1)*config['BATCH_SIZE']
+        i_end = min((i+1)*config['BATCH_SIZE'], n)
         for h in range(n_h):
             for w in range(n_w):
                 h_start = h*config['STRIDE']
