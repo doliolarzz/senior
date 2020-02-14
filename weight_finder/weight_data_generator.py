@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from utils import get_weight_train_data
+from utils.predictor import get_weight_train_data
 from config import config
 
 def predict(input, model):
