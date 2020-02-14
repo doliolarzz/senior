@@ -23,7 +23,7 @@ model.load_state_dict(
 data = get_data('20190630_2000.bin', crop=[31, 37, 127, 142])
 data = mm_dbz(data)
 
-weight = np.load('../utils/weight.npz')['w'] + 1e-3
+weight = config['MERGE_WEIGHT']
 
 pred, label = prepare_testing(data, model, weight=weight)
 pred = np.maximum(dbz_mm(pred), 0)

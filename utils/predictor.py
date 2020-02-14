@@ -4,6 +4,7 @@ import numpy as np
 from config import config
 from utils.units import dbz_mm, get_crop_boundary_idx
 import cv2
+from tqdm import tqdm
 
 # In (in_len, n, 480, 480) -> Out (out_len, n, 480, 480)
 def predict(input, model):
@@ -34,7 +35,7 @@ def get_each_predictions(data, model):
     n_w = int((width - config['IMG_SIZE'])/config['STRIDE']) + 1
     pred = np.zeros((config['OUT_LEN'], n, n_h, n_w, config['IMG_SIZE'], config['IMG_SIZE']), dtype=np.float32)
     
-    for i in range(int(np.ceil(n / config['BATCH_SIZE']))):
+    for i in tqdm(range(int(np.ceil(n / config['BATCH_SIZE'])))):
         i_start = i*config['BATCH_SIZE']
         i_end = min((i+1)*config['BATCH_SIZE'], n)
         for h in range(n_h):
@@ -97,8 +98,8 @@ def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
             data[i, f, :] = np.fromfile(file, dtype=np.float32).reshape((config['DATA_HEIGHT'], config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
     return data
 
-def generate_weight_train_data(model, save_name='./weight_train_data.npz'):
-    data = get_weight_train_data(1000)
+def generate_weight_train_data(model, size, save_name='./weight_train_data.npz'):
+    data = get_weight_train_data(size)
     pred, label = get_each_predictions(data, model)
     np.savez(save_name, X=pred, y=label)
 
