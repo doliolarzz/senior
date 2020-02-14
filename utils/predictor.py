@@ -59,24 +59,47 @@ def get_each_predictions(data, model):
 
     return pred, label
 
-def get_data(start_fn, crop=None):
+def get_data(start_fn, crop=None, out_len=config['OUT_TARGET_LEN']):
 
     h1, h2, w1, w2 = 0, config['DATA_HEIGHT'], 0, config['DATA_WIDTH']
     if crop is not None:
         h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
     files = sorted([file for file in glob.glob(config['TEST_PATH'])])
-    try:
-        idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_fn)
-    except:
-        idx = -1
-        print('not found')
+    idx = 0
+    if start_fn != '':
+        try:
+            idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_fn)
+        except:
+            idx = -1
+            print('not found')
 
-    data = np.zeros((config['IN_LEN'] + config['OUT_TARGET_LEN'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
-    for i, file in enumerate(files[idx:idx+config['IN_LEN']+config['OUT_TARGET_LEN']]):
+    data = np.zeros((config['IN_LEN'] + out_len, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
+    for i, file in enumerate(files[idx:idx+config['IN_LEN']+out_len]):
         data[i, :] = np.fromfile(file, dtype=np.float32).reshape((config['DATA_HEIGHT'], config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
     
     return data
+
+def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
+
+    h1, h2, w1, w2 = 0, config['DATA_HEIGHT'], 0, config['DATA_WIDTH']
+    if crop is not None:
+        h1, h2, w1, w2 = get_crop_boundary_idx(crop)
+
+    files = sorted([file for file in glob.glob(config['DATA_PATH'])])
+
+    window_size = config['IN_LEN'] + out_len
+    picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
+    data = np.zeros((sample_size, window_size, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
+    for i in picked_files:
+        for f, file in enumerate(files[i:i+window_size]):
+            data[i, f, :] = np.fromfile(file, dtype=np.float32).reshape((config['DATA_HEIGHT'], config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
+    return data
+
+def generate_weight_train_data(model, save_name='./weight_train_data.npz'):
+    data = get_weight_train_data(1000)
+    pred, label = get_each_predictions(data, model)
+    np.savez(save_name, X=pred, y=label)
 
 def prepare_testing(data, model, weight=1, stride=120):
 
