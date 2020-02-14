@@ -5,9 +5,9 @@ from torch.optim import lr_scheduler
 from models.encoder import Encoder
 from models.forecaster import Forecaster
 from models.model import EF
-from utils.train_multitask import k_train
+from utils.train import k_train
 from config import config
-from net_params_BN import convlstm_encoder_params, convlstm_forecaster_params
+from net_params import convlstm_encoder_params, convlstm_forecaster_params
 
 k_fold = 1
 batch_size = config['BATCH_SIZE']
@@ -28,4 +28,4 @@ def get_model_set():
     return encoder_forecaster, optimizer, exp_lr_scheduler
 
 k_train(k_fold, get_model_set, mse_loss, 
-            batch_size, max_iterations)
+            batch_size, max_iterations, multitask=True)

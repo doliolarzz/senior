@@ -121,6 +121,3 @@ def cal_rmse_all(pred, label, thres=0.2):
     rmse_non_rain = cal_rmse(pred[~mask], label[~mask])
 
     return rmse, rmse_rain, rmse_non_rain
-
-def get_summary_table():
-    return None

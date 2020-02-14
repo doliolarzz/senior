@@ -10,6 +10,7 @@ class ConvLSTM(nn.Module):
                                kernel_size=kernel_size,
                                stride=stride,
                                padding=padding)
+        self._batch_norm = nn.BatchNorm2d(num_filter*4)
         self._batch_size, self._state_height, self._state_width = b_h_w
         # if using requires_grad flag, torch.save will not save parameters in deed although it may be updated every epoch.
         # Howerver, if you use declare an optimizer like Adam(model.parameters()),
@@ -42,6 +43,7 @@ class ConvLSTM(nn.Module):
                 x = inputs[index, ...]
             cat_x = torch.cat([x, h], dim=1)
             conv_x = self._conv(cat_x)
+            conv_x = self._batch_norm(conv_x)
 
             i, f, tmp_c, o = torch.chunk(conv_x, 4, dim=1)
 

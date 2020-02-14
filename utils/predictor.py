@@ -9,38 +9,10 @@ def predict(input, model):
     with torch.no_grad():
         input = torch.from_numpy(input[:, None, None]).to(config['DEVICE'])
         output = model(input)
-    # return np.maximum(dbz_mm(output.cpu().numpy()[:,0,0]), 0)
     return output.cpu().numpy()[:,0,0]
 
 # def get_each_predictions(input, model):
-
-#     t, height, width = input.shape
-#     n_h = int((height - config['IMG_SIZE'])/config['STRIDE']) + 1
-#     n_w = int((width - config['IMG_SIZE'])/config['STRIDE']) + 1
-# bug hereeeeeeeeeeeeeeeeeeeeeeee v
-#     data = np.zeros((config['OUT_LEN'], n_h+1, n_w+1, config['IMG_SIZE'], config['IMG_SIZE']), dtype=np.float32)
-
-#     for h in range(n_h):
-#         for w in range(n_w):
-#             h_start = h*config['STRIDE']
-#             h_end = h*config['STRIDE'] + config['IMG_SIZE']
-#             w_start = w*config['STRIDE']
-#             w_end = w*config['STRIDE'] + config['IMG_SIZE']
-#             data[:, h, w] += predict(input[:, h_start:h_end, w_start:w_end], model)
-
-#     for h in range(n_h):
-#         h_start = h*config['STRIDE']
-#         h_end = h*config['STRIDE'] + config['IMG_SIZE']
-#         data[:, h, n_w] += predict(input[:, h_start:h_end, -config['IMG_SIZE']:], model)
-
-#     for w in range(n_w):
-#         w_start = w*config['STRIDE']
-#         w_end = w*config['STRIDE'] + config['IMG_SIZE']
-#         data[:, n_h, w] += predict(input[:, -config['IMG_SIZE']:, w_start:w_end], model)
-    
-#     data[:, n_h, n_w] += predict(input[:, -config['IMG_SIZE']:, -config['IMG_SIZE']:], model)
-
-#     return data
+#     None
 
 def get_data(start_fn, crop=None):
 
@@ -105,9 +77,7 @@ def prepare_testing(data, model, weight=1, stride=120):
 
         pred_i = vals / counts
         pred[i*config['OUT_LEN']:(i+1)*config['OUT_LEN']] = pred_i
-        # if i == 16:
-        #     cv2.imshow('test', cv2.cvtColor(np.array(pred_i[0]/pred_i.max()*255,dtype=np.uint8), cv2.COLOR_GRAY2BGR))
-        #     cv2.waitKey(0)
+        
         input = np.concatenate([input[1:], pred_i], axis=0)
 
     return pred, label

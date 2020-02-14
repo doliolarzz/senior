@@ -24,24 +24,3 @@ c_f = 16 / (60 * np.log(10))
 c_h = 5 / 8 * np.log(200)
 def mm_dbz(value):
     return c_f * (c_h + np.log(value + 1)) 
-
-def pixel_to_rainfall(img, a=58.53, b=1.56):
-    dBZ = pixel_to_dBZ(img)
-    dBR = (dBZ - 10.0 * np.log10(a)) / b
-    rainfall_intensity = np.power(10, dBR / 10.0)
-    return rainfall_intensity
-
-
-def rainfall_to_pixel(rainfall_intensity, a=58.53, b=1.56):
-    dBR = np.log10(rainfall_intensity) * 10.0
-    # dBZ = 10b log(R) +10log(a)
-    dBZ = dBR * b + 10.0 * np.log10(a)
-    pixel_vals = (dBZ + 10.0) / 70.0
-    return pixel_vals
-
-def dBZ_to_rainfall(dBZ, a=58.53, b=1.56):
-    return np.power(10, (dBZ - 10 * np.log10(a))/(10*b))
-
-def rainfall_to_dBZ(rainfall, a=58.53, b=1.56):
-    return 10*np.log10(a) + 10*b*np.log10(rainfall)
-
