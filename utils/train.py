@@ -73,10 +73,10 @@ def k_train(k_fold, model, loss_func,
                         for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
-                            loss = loss_func(output, train_label)
+                            loss = loss_func(output, val_label)
                             n_t, n_b, n_c, n_h, n_w = output.size()
                             if multitask:
-                                loss += cel_cri((output>=0.2).float().view(n_t*n_b,-1), (train_label>=0.2).float().view(n_t*n_b,-1))
+                                loss += cel_cri((output>=0.2).float().view(n_t*n_b,-1), (val_label>=0.2).float().view(n_t*n_b,-1))
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
                             val_count += 1
