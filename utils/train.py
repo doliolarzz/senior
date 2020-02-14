@@ -10,8 +10,10 @@ from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 from utils.units import dbz_mm
 
+cel_cri = torch.nn.CrossEntropyLoss(weight=[1, 99]).to(config['DEVICE'])
+
 def k_train(k_fold, model, loss_func,
-            batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000):
+            batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000, multitask=False):
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
@@ -47,6 +49,8 @@ def k_train(k_fold, model, loss_func,
                 optimizer.zero_grad()
                 output = k_model(train_data)
                 loss = loss_func(output, train_label)
+                if multitask:
+                    loss += cel_cri((output>=0.2).float().permute(1,2,0,3,4), (train_label>=0.2).float().permute(1,2,0,3,4))
                 loss.backward()
                 torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
                 optimizer.step()
@@ -68,7 +72,9 @@ def k_train(k_fold, model, loss_func,
                         for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
                             val_data, val_label = data_gen.get_val(b_val)
                             output = k_model(val_data)
-                            loss = loss_func(output, val_label)
+                            loss = loss_func(output, train_label)
+                            if multitask:
+                                loss += cel_cri((output>=0.2).float().permute(1,2,0,3,4), (train_label>=0.2).float().permute(1,2,0,3,4))
                             val_loss += loss.item()
                             val_csi += fp_fn_image_csi(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
                             val_count += 1
