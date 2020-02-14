@@ -9,7 +9,7 @@ config = {
     'IN_LEN': 5,
     'OUT_LEN': 1,
     'OUT_TARGET_LEN': 18,
-    'BATCH_SIZE': 4,
+    'BATCH_SIZE': 2,
     'RNN_ACT_TYPE': activation('leaky', negative_slope=0.2, inplace=True),
     'IMG_SIZE': 480,
     'STRIDE': 120,
@@ -38,5 +38,5 @@ config = {
        42051, 42050, 42049, 42048, 42047, 42046, 42045, 42044, 42043,
        42042, 42041, 42040, 42039, 42038, 42037, 42036, 42035, 42034,
        42033, 42032, 42031, 42030, 42029, 42028],
-    'MERGE_WEIGHT': np.load('./utils/weight.npz')['w'] + 1e-3
+    'MERGE_WEIGHT': np.load('../utils/weight.npz')['w'] + 1e-3
 }

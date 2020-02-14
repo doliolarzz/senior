@@ -61,6 +61,6 @@ encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(con
 forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1]).to(config['DEVICE'])
 model = EF(encoder, forecaster).to(config['DEVICE'])
 model.load_state_dict(
-    torch.load('/home/doliolarzz/Desktop/senior_trained/in5_out1.pth', map_location='cuda'))
+    torch.load('/home/warit/senior/experiments/logs_in5_out1/model_f1_i4000.pth', map_location='cuda'))
 
-generate_weight_train_data(model, 1000)
+generate_weight_train_data(model, 100)

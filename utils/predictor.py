@@ -8,17 +8,17 @@ from tqdm import tqdm
 
 # In (in_len, n, 480, 480) -> Out (out_len, n, 480, 480)
 def predict(input, model):
-    assert input.size(0) == config['IN_LEN']
-    assert input.size(2) == config['IMG_SIZE']
-    assert input.size(3) == config['IMG_SIZE']
+    assert input.shape[0] == config['IN_LEN']
+    assert input.shape[2] == config['IMG_SIZE']
+    assert input.shape[3] == config['IMG_SIZE']
 
     with torch.no_grad():
         input = torch.from_numpy(input[:, :, None]).to(config['DEVICE'])
         output = model(input)
     
-    assert output.size(0) == config['OUT_LEN']
-    assert output.size(3) == config['IMG_SIZE']
-    assert output.size(4) == config['IMG_SIZE']
+    assert output.shape[0] == config['OUT_LEN']
+    assert output.shape[3] == config['IMG_SIZE']
+    assert output.shape[4] == config['IMG_SIZE']
 
     return output.cpu().numpy()[:, :, 0]
 
@@ -33,7 +33,7 @@ def get_each_predictions(data, model):
 
     n_h = int((height - config['IMG_SIZE'])/config['STRIDE']) + 1
     n_w = int((width - config['IMG_SIZE'])/config['STRIDE']) + 1
-    pred = np.zeros((config['OUT_LEN'], n, n_h, n_w, config['IMG_SIZE'], config['IMG_SIZE']), dtype=np.float32)
+    pred = np.zeros((config['OUT_LEN'], n, n_h+1, n_w+1, config['IMG_SIZE'], config['IMG_SIZE']), dtype=np.float32)
     
     for i in tqdm(range(int(np.ceil(n / config['BATCH_SIZE'])))):
         i_start = i*config['BATCH_SIZE']
@@ -83,7 +83,7 @@ def get_data(start_fn, crop=None, out_len=config['OUT_TARGET_LEN']):
 
 def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
 
-    h1, h2, w1, w2 = 0, config['DATA_HEIGHT'], 0, config['DATA_WIDTH']
+    h1, h2, w1, w2 = 0, config['DATA_HEIGHT'] - 1, 0, config['DATA_WIDTH'] - 1
     if crop is not None:
         h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
@@ -93,8 +93,8 @@ def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
     picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
     picked_files = np.setdiff1d(picked_files, config['MISSINGS'])
     data = np.zeros((sample_size, window_size, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
-    for i in picked_files:
-        for f, file in enumerate(files[i:i+window_size]):
+    for i, pf in enumerate(picked_files):
+        for f, file in enumerate(files[pf:pf+window_size]):
             data[i, f, :] = np.fromfile(file, dtype=np.float32).reshape((config['DATA_HEIGHT'], config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
     return data
 
