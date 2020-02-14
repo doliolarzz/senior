@@ -90,6 +90,7 @@ def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
 
     window_size = config['IN_LEN'] + out_len
     picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
+    picked_files = np.setdiff1d(picked_files, config['MISSINGS'])
     data = np.zeros((sample_size, window_size, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
     for i in picked_files:
         for f, file in enumerate(files[i:i+window_size]):
