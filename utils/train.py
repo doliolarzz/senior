@@ -16,7 +16,7 @@ def k_train(k_fold, model, loss_func,
 
     cel_cri = None
     if multitask:
-        cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([99])).to(config['DEVICE'])
+        cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([1e-4])).to(config['DEVICE'])
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
