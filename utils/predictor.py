@@ -1,7 +1,7 @@
 import torch
 import os, glob
 import numpy as np
-from config import config
+from global_config import global_config
 from utils.units import dbz_mm, get_crop_boundary_idx
 import cv2
 from tqdm import tqdm

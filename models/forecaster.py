@@ -1,12 +1,12 @@
 import torch
 from torch import nn
 from models.utils import make_layers
-from config import config
 import logging
 
 class Forecaster(nn.Module):
-    def __init__(self, subnets, rnns):
+    def __init__(self, subnets, rnns, config=None):
         super().__init__()
+        self.config = config
         assert len(subnets) == len(rnns)
 
         self.blocks = len(subnets)
@@ -16,7 +16,7 @@ class Forecaster(nn.Module):
             setattr(self, 'stage' + str(self.blocks-index), make_layers(params))
 
     def forward_by_stage(self, input, state, subnet, rnn):
-        input, state_stage = rnn(input, state, seq_len=config['OUT_LEN'])
+        input, state_stage = rnn(input, state, seq_len=self.config['OUT_LEN'])
         seq_number, batch_size, input_channel, height, width = input.size()
         input = torch.reshape(input, (-1, input_channel, height, width))
         input = subnet(input)

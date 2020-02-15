@@ -1,16 +1,15 @@
 import torch
 from torch import nn
-from config import config
 from models.model import activation
 import torch.nn.functional as F
 
 # input: B, C, H, W
 # flow: [B, 2, H, W]
-def wrap(input, flow):
+def wrap(input, flow, device=None):
     B, C, H, W = input.size()
     # mesh grid
-    xx = torch.arange(0, W).view(1, -1).repeat(H, 1).to(config['DEVICE'])
-    yy = torch.arange(0, H).view(-1, 1).repeat(1, W).to(config['DEVICE'])
+    xx = torch.arange(0, W).view(1, -1).repeat(H, 1).to(device)
+    yy = torch.arange(0, H).view(-1, 1).repeat(1, W).to(device)
     xx = xx.view(1, 1, H, W).repeat(B, 1, 1, 1)
     yy = yy.view(1, 1, H, W).repeat(B, 1, 1, 1)
     grid = torch.cat((xx, yy), 1).float()
@@ -29,8 +28,10 @@ class BaseConvRNN(nn.Module):
                  i2h_kernel=(3, 3), i2h_stride=(1, 1),
                  i2h_pad=(1, 1), i2h_dilate=(1, 1),
                  act_type=torch.tanh,
-                 prefix='BaseConvRNN'):
+                 prefix='BaseConvRNN',
+                 config=None):
         super(BaseConvRNN, self).__init__()
+        self.config = config
         self._prefix = prefix
         self._num_filter = num_filter
         self._h2h_kernel = h2h_kernel
@@ -61,7 +62,8 @@ class TrajGRU(BaseConvRNN):
     def __init__(self, input_channel, num_filter, b_h_w, zoneout=0.0, L=5,
                  i2h_kernel=(3, 3), i2h_stride=(1, 1), i2h_pad=(1, 1),
                  h2h_kernel=(5, 5), h2h_dilate=(1, 1),
-                 act_type=config['RNN_ACT_TYPE']):
+                 act_type=activation('leaky', negative_slope=0.2, inplace=True),
+                 config=None):
         super(TrajGRU, self).__init__(num_filter=num_filter,
                                       b_h_w=b_h_w,
                                       h2h_kernel=h2h_kernel,
@@ -70,7 +72,9 @@ class TrajGRU(BaseConvRNN):
                                       i2h_pad=i2h_pad,
                                       i2h_stride=i2h_stride,
                                       act_type=act_type,
-                                      prefix='TrajGRU')
+                                      prefix='TrajGRU',
+                                      config=config)
+        self.config = config
         self._L = L
         self._zoneout = zoneout
 
@@ -131,10 +135,13 @@ class TrajGRU(BaseConvRNN):
 
     # inputs 和 states 不同时为空
     # inputs: S*B*C*H*W
-    def forward(self, inputs=None, states=None, seq_len=config['IN_LEN']):
+    def forward(self, inputs=None, states=None, seq_len=None):
+        if seq_len is None:
+            seq_len = self.config['IN_LEN']
+
         if states is None:
             states = torch.zeros((inputs.size(1), self._num_filter, self._state_height,
-                                  self._state_width), dtype=torch.float).to(config['DEVICE'])
+                                  self._state_width), dtype=torch.float).to(self.config['DEVICE'])
         if inputs is not None:
             S, B, C, H, W = inputs.size()
             i2h = self.i2h(torch.reshape(inputs, (-1, C, H, W)))
@@ -154,7 +161,7 @@ class TrajGRU(BaseConvRNN):
             wrapped_data = []
             for j in range(len(flows)):
                 flow = flows[j]
-                wrapped_data.append(wrap(prev_h, -flow))
+                wrapped_data.append(wrap(prev_h, -flow, self.config['DEVICE']))
             wrapped_data = torch.cat(wrapped_data, dim=1)
             h2h = self.ret(wrapped_data)
             h2h_slice = torch.split(h2h, self._num_filter, dim=1)

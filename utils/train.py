@@ -3,25 +3,28 @@ import torch
 from torch.optim import lr_scheduler
 import numpy as np
 from tqdm import tqdm
-from config import config
+from global_config import global_config
 from tensorboardX import SummaryWriter
 from utils.generators import DataGenerator
 from utils.evaluators import fp_fn_image_csi
 from datetime import datetime
 from utils.units import dbz_mm
 
-cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([99])).to(config['DEVICE'])
-
 def k_train(k_fold, model, loss_func,
-            batch_size, max_iterations, save_dir='./logs', eval_every=100, checkpoint_every=1000, multitask=False):
+            batch_size, max_iterations, save_dir='./logs', eval_every=100, 
+            checkpoint_every=1000, multitask=False, config=None):
+
+    cel_cri = None
+    if multitask:
+        cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([99])).to(config['DEVICE'])
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    data_gen = DataGenerator(config['DATA_PATH'], k_fold, 
-        batch_size, config['IN_LEN'], config['OUT_LEN'], config['IN_LEN'] + config['OUT_LEN'])
+    data_gen = DataGenerator(global_config['DATA_PATH'], k_fold, 
+        batch_size, config['IN_LEN'], config['OUT_LEN'], config['IN_LEN'] + config['OUT_LEN'], config=config)
     writer = SummaryWriter(os.path.join(save_dir, 'train_logs'))
 
     for k in range(1, k_fold + 1):

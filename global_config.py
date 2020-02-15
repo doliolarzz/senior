@@ -1,18 +1,12 @@
 import torch
-from models.model import activation
 import numpy as np
 
-config = {
+global_config = {
     'DATA_PATH': '/mnt/raid0/wni_dataset/*/*/*.bin',
     'TEST_PATH': '/media/doliolarzz/Ubuntu_data/test/*.bin',
-    'DEVICE': torch.device('cuda:0'),
-    'IN_LEN': 5,
-    'OUT_LEN': 1,
-    'OUT_TARGET_LEN': 18,
-    'BATCH_SIZE': 2,
-    'RNN_ACT_TYPE': activation('leaky', negative_slope=0.2, inplace=True),
     'IMG_SIZE': 480,
     'STRIDE': 120,
+    'OUT_TARGET_LEN': 18,
     'DATA_WIDTH': 2560,
     'DATA_HEIGHT': 3360,
     'lAT_MIN': 20.005,
