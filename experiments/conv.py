@@ -22,10 +22,10 @@ if __name__ == "__main__":
     parser.add_argument('--multitask', required=True)
     args = vars(parser.parse_args())
 
-    if not os.path.exists('./logs'):
-        os.makedirs('./logs')
+    if not os.path.exists('./conv_logs'):
+        os.makedirs('./conv_logs')
 
-    logs_name = './logs/logs_' + args['name']
+    logs_name = './conv_logs/logs_' + args['name']
     multitask = True if args['multitask'].lower() == 'true' else False
     config = {
         'DEVICE': torch.device(args['device']),
