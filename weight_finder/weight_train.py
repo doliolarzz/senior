@@ -14,9 +14,7 @@ from utils.visualizers import make_gif_color, rainfall_shade
 from utils.units import mm_dbz, dbz_mm
 from collections import OrderedDict
 from models.convLSTM import ConvLSTM
-import tensorflow as tf
-from weight_data_generator import weight_data_generator
-from weight_model import WeightFinder
+from weight_data_model import train_weight_model
 
 batch_size = config['BATCH_SIZE']
 IN_LEN = config['IN_LEN']
@@ -66,13 +64,4 @@ model = EF(encoder, forecaster).to(config['DEVICE'])
 model.load_state_dict(
     torch.load('/home/warit/senior/experiments/logs_in5_out1/model_f1_i4000.pth', map_location='cuda'))
 
-data_generator = tf.data.Dataset.from_generator(
-    lambda: weight_data_generator(model, 6),
-    output_types=(tf.float32, tf.float32), 
-    output_shapes=((None, 26, 19, config['IMG_SIZE'], config['IMG_SIZE']), 
-                   (None, None, None)))
-wf = WeightFinder(config['DATA_HEIGHT'], config['DATA_WIDTH'])
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
-wf.run_eagerly = True
-wf.compile(optimizer, loss='mse')
-wf.fit(data_generator, epochs=10)
+train_weight_model(model, 10, crop=None, epochs=10, learning_rate=1e-6)
