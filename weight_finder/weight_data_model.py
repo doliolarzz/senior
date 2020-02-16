@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from utils.predictor import get_weight_train_data
 from global_config import global_config
+from tqdm import tqdm
 
 def predict(input, model, config=None):
     assert input.shape[0] == config['IN_LEN']
@@ -34,11 +35,14 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
 #     weight = torch.randn(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
     weight = torch.ones(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
     
+    mse = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam([weight], lr=learning_rate)
+    
     all_itera = 0
+    pbar = tqdm(total=epochs*int(np.ceil(n / config['BATCH_SIZE'])))
     for e in range(epochs):
     
         for i in range(int(np.ceil(n / config['BATCH_SIZE']))):
-            all_itera += 1
 
             pred[:] = 0
             i_start = i*config['BATCH_SIZE']
@@ -96,13 +100,18 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
 
             y_pred = vals / counts
 
-            loss = (y_pred - y).pow(2).sum().mean().sqrt()
-            if all_itera % 1 == 0:
-                print(all_itera, loss.item())
+            loss = mse(y_pred, y) #.pow(2).sum()
+#             if all_itera % 1 == 0:
+#                 print(all_itera, loss.item())
+            pbar.set_description('Current Loss %.2f' % loss.item())
+            all_itera += 1
+            pbar.update(1)
+            optimizer.zero_grad()
             loss.backward()
-
-            with torch.no_grad():
-                weight -= learning_rate * weight.grad
-                weight.grad.zero_()
+            optimizer.step()
+#             with torch.no_grad():
+#                 weight -= learning_rate * weight.grad
+#                 weight.grad.zero_()
+    pbar.close()
     
     return weight.detach().cpu().numpy()

@@ -1,4 +1,5 @@
 import sys, os
+import numpy as np
 from argparse import ArgumentParser
 sys.path.insert(0, '../')
 import torch
@@ -15,7 +16,7 @@ from weight_data_model import train_weight_model
 if __name__ == "__main__":
 
     config = {
-        'DEVICE': torch.device('cuda'),
+        'DEVICE': torch.device('cuda:2'),
         'IN_LEN': 5,
         'OUT_LEN': 1,
         'BATCH_SIZE': 1,
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1], config=config).to(config['DEVICE'])
     model = EF(encoder, forecaster).to(config['DEVICE'])
     model.load_state_dict(
-        torch.load('/home/doliolarzz/Desktop/senior_trained/multi_5_1.pth', map_location='cuda'))
+        torch.load('./model.pth'))
 
-    w = train_weight_model(model, 10, crop=None, epochs=10, learning_rate=1e-2, config=config)
+    w = train_weight_model(model, 100, crop=None, epochs=2, learning_rate=1e-2, config=config)
     np.savez('learnt_weight.npz', w=w)
