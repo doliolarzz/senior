@@ -16,7 +16,7 @@ def k_train(k_fold, model, loss_func,
 
     cel_cri = None
     if multitask:
-        cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([1e-4])).to(config['DEVICE'])
+        cel_cri = torch.nn.BCEWithLogitsLoss(pos_weight=torch.FloatTensor([1000])).to(config['DEVICE'])
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 
@@ -42,7 +42,7 @@ def k_train(k_fold, model, loss_func,
         for itera in pbar:
             
             n_train_batch = data_gen.n_train_batch()
-            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 12000))#range(data_gen.n_train_batch()))
+            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 5000))#range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
                 pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
