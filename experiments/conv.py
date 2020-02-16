@@ -43,8 +43,7 @@ if __name__ == "__main__":
     gamma = 0.7
     LR = 1e-4
     mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
-    IN_LEN = config['IN_LEN']
-    OUT_LEN = config['OUT_LEN']
+
     convlstm_encoder_params = [
         [
             OrderedDict({'conv1_leaky_1': [1, 8, 7, 5, 1]}),

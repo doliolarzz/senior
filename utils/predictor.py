@@ -24,7 +24,7 @@ def predict(input, model):
 
 # In (N, t, height, width) 
 # -> Out (out_len, N, n_h, n_w, 480, 480), (out_len, N, height, width)
-def get_each_predictions(data, model):
+def get_each_predictions(data, model, config=None):
 
     n, t, height, width = data.shape
     assert t == config['IN_LEN'] + config['OUT_LEN']
@@ -60,9 +60,9 @@ def get_each_predictions(data, model):
 
     return pred, label
 
-def get_data(start_fn, crop=None, out_len=config['OUT_TARGET_LEN']):
+def get_data(start_fn, crop=None, config=None):
 
-    h1, h2, w1, w2 = 0, config['DATA_HEIGHT'], 0, config['DATA_WIDTH']
+    h1, h2, w1, w2 = 0, global_config['DATA_HEIGHT'] - 1, 0, global_config['DATA_WIDTH'] - 1
     if crop is not None:
         h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
@@ -81,21 +81,21 @@ def get_data(start_fn, crop=None, out_len=config['OUT_TARGET_LEN']):
     
     return data
 
-def get_weight_train_data(sample_size, crop=None, out_len=config['OUT_LEN']):
+def get_weight_train_data(sample_size, crop=None, config=None):
 
-    h1, h2, w1, w2 = 0, config['DATA_HEIGHT'] - 1, 0, config['DATA_WIDTH'] - 1
+    h1, h2, w1, w2 = 0, global_config['DATA_HEIGHT'] - 1, 0, global_config['DATA_WIDTH'] - 1
     if crop is not None:
         h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
-    files = sorted([file for file in glob.glob(config['DATA_PATH'])])
+    files = sorted([file for file in glob.glob(global_config['DATA_PATH'])])
 
-    window_size = config['IN_LEN'] + out_len
+    window_size = config['IN_LEN'] + config['OUT_LEN']
     picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
-    picked_files = np.setdiff1d(picked_files, config['MISSINGS'])
+    picked_files = np.setdiff1d(picked_files, global_config['MISSINGS'])
     data = np.zeros((sample_size, window_size, h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
     for i, pf in enumerate(picked_files):
         for f, file in enumerate(files[pf:pf+window_size]):
-            data[i, f, :] = np.fromfile(file, dtype=np.float32).reshape((config['DATA_HEIGHT'], config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
+            data[i, f, :] = np.fromfile(file, dtype=np.float32).reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
     return data
 
 def generate_weight_train_data(model, size, save_name='./weight_train_data.npz'):
