@@ -87,3 +87,28 @@ class DataGenerator():
 
     def n_val_batch(self):
         return int(np.ceil(self.val_indices.shape[0]/self.batch_size))
+
+class DataGenerator_FCN(DataGenerator):
+
+    def __init__(self, data_path, k_fold, batch_size, in_len, out_len, windows_size, config):
+        super().__init__(data_path, k_fold, batch_size, in_len, out_len, windows_size, config)
+
+    def get_train(self, i):
+
+        if self.last_train is not None:
+            del self.last_train
+            torch.cuda.empty_cache()
+            
+        idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
+        self.last_train = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
+        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:]
+
+    def get_val(self, i):
+        
+        if self.last_val is not None:
+            del self.last_val
+            torch.cuda.empty_cache()
+
+        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
+        self.last_val = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
+        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:]

@@ -56,7 +56,7 @@ def k_train(k_fold, model, loss_func,
                 if multitask:
                     loss += cel_cri((output>=0.2).float().view(n_t*n_b,-1), (train_label>=0.2).float().view(n_t*n_b,-1))
                 loss.backward()
-                torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
+                # torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
                 optimizer.step()
                 lr_scheduler.step()
                 train_loss += loss.item()
