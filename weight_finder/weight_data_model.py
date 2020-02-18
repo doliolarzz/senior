@@ -57,8 +57,8 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
             label = data[config['IN_LEN']:]
 
             pred = np.zeros((config['OUT_LEN'], config['BATCH_SIZE'], n_h+1, n_w+1, global_config['IMG_SIZE'], global_config['IMG_SIZE']), dtype=np.float32)
-            i_start = i*config['BATCH_SIZE']
-            i_end = min((i+1)*config['BATCH_SIZE'], size)
+            # i_start = i*config['BATCH_SIZE']
+            # i_end = min((i+1)*config['BATCH_SIZE'], size)
 
             for h in range(n_h):
                 for w in range(n_w):
@@ -66,22 +66,22 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
                     h_end = h*global_config['STRIDE'] + global_config['IMG_SIZE']
                     w_start = w*global_config['STRIDE']
                     w_end = w*global_config['STRIDE'] + global_config['IMG_SIZE']
-                    pred[:, :, h, w] += predict(input[:, i_start:i_end, h_start:h_end, w_start:w_end], model, config=config)
+                    pred[:, :, h, w] += predict(input[:, :, h_start:h_end, w_start:w_end], model, config=config)
 
             for h in range(n_h):
                 h_start = h*global_config['STRIDE']
                 h_end = h*global_config['STRIDE'] + global_config['IMG_SIZE']
-                pred[:, :, h, n_w] += predict(input[:, i_start:i_end, h_start:h_end, -global_config['IMG_SIZE']:], model, config=config)
+                pred[:, :, h, n_w] += predict(input[:, :, h_start:h_end, -global_config['IMG_SIZE']:], model, config=config)
 
             for w in range(n_w):
                 w_start = w*global_config['STRIDE']
                 w_end = w*global_config['STRIDE'] + global_config['IMG_SIZE']
-                pred[:, :, n_h, w] += predict(input[:, i_start:i_end, -global_config['IMG_SIZE']:, w_start:w_end], model, config=config)
+                pred[:, :, n_h, w] += predict(input[:, :, -global_config['IMG_SIZE']:, w_start:w_end], model, config=config)
 
-            pred[:, :, n_h, n_w] += predict(input[:, i_start:i_end, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:], model, config=config)
+            pred[:, :, n_h, n_w] += predict(input[:, :, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:], model, config=config)
 
             x = torch.from_numpy(pred.reshape(-1, n_h+1, n_w+1, global_config['IMG_SIZE'], global_config['IMG_SIZE'])).float().to(config['DEVICE'])
-            y = torch.from_numpy(label[:, i_start:i_end].reshape(-1, height, width)).float().to(config['DEVICE'])
+            y = torch.from_numpy(label.reshape(-1, height, width)).float().to(config['DEVICE'])
             
             vals = torch.zeros(config['BATCH_SIZE'], height, width, device=config['DEVICE'], dtype=torch.float, requires_grad=False)
             counts = torch.zeros(config['BATCH_SIZE'], height, width, device=config['DEVICE'], dtype=torch.float, requires_grad=False)
