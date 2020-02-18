@@ -16,5 +16,5 @@ global_config = {
     'MISSINGS': np.load('../weight_npz/missings.npz')['m'],
     'MERGE_WEIGHT': np.load('../weight_npz/weight.npz')['w'] + 1e-3,
     'LEVEL_BUCKET': [0.2, 10, 30],
-    'LEVEL_SIDE': 'right'
+    'LEVEL_SIDE': 'right',
 }

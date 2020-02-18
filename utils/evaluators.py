@@ -9,6 +9,7 @@
 
 
 import numpy as np
+from global_config import global_config
 
 def hex2Rgb(tn_rgb):
     return list(int(tn_rgb[i:i+2], 16) for i in (0, 2, 4))
@@ -82,6 +83,25 @@ def fp_fn_image_csi(pred, gt, threshold=0.2):
     csi = float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100
 
     return csi
+
+
+def fp_fn_image_csi_muti(pred, gt):
+    # categorize
+    pred_cat = np.searchsorted(global_config['LEVEL_BUCKET'], pred, side=global_config['LEVEL_SIDE'])
+    gt_cat = np.searchsorted(global_config['LEVEL_BUCKET'], gt, side=global_config['LEVEL_SIDE'])
+
+    # evaluate
+    all_csi = []
+    for i in range(len(global_config['LEVEL_BUCKET']) + 1):
+        
+        fp = np.sum((gt_cat != i) & (pred_cat == i))
+        fn = np.sum((gt_cat == i) & (pred_cat != i))
+        tp = np.sum((gt_cat == i) & (pred_cat == i))
+        tn = np.sum((gt_cat != i) & (pred_cat != i))
+
+        all_csi.append(float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100)
+
+    return np.array(all_csi)
 
 
 def fp_fn_image_hit(gt, pred, threshold, mask=None):
