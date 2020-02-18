@@ -12,12 +12,12 @@ from datetime import datetime
 from utils.units import dbz_mm
 from sklearn.metrics import accuracy_score, f1_score
 
-mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
-cls_loss = cross_entropy2d
-
 def k_train_fcn(k_fold, model,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, 
             checkpoint_every=1000, mode='reg', config=None):
+    
+    mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
+    cls_loss = cross_entropy2d
 
     save_dir += datetime.now().strftime("_%m_%d_%H_%M")
 

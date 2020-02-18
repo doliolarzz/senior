@@ -100,8 +100,11 @@ class DataGenerator_FCN(DataGenerator):
             torch.cuda.empty_cache()
             
         idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
-        self.last_train = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
-        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:], np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), self.last_train[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        temp_data = self.get_data(idx).swapaxes(0,1)
+        self.last_train = torch.from_numpy(temp_data).to(self.config['DEVICE'])
+        cat_data = np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), temp_data[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        cat_data = torch.from_numpy(cat_data).to(self.config['DEVICE'])
+        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:], cat_data
 
     def get_val(self, i):
         
@@ -110,5 +113,8 @@ class DataGenerator_FCN(DataGenerator):
             torch.cuda.empty_cache()
 
         idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
-        self.last_val = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
-        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:], np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), self.last_val[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        temp_data = self.get_data(idx).swapaxes(0,1)
+        self.last_val = torch.from_numpy(temp_data).to(self.config['DEVICE'])
+        cat_data = np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), temp_data[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        cat_data = torch.from_numpy(cat_data).to(self.config['DEVICE'])
+        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:], cat_data

@@ -35,7 +35,7 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
 
     n_h = int((height - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
     n_w = int((width - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
-    weight = torch.ones(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
+    weight = torch.randn(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
     sigmoid = torch.nn.Sigmoid()
     
     mse = torch.nn.MSELoss()

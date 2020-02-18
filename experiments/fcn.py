@@ -37,7 +37,7 @@ if __name__ == "__main__":
     LR = 1e-4
 
     def get_model_set():
-        model = FCN8s(n_class=4, n_channel=5)
+        model = FCN8s(n_class=4, n_channel=5).to(config['DEVICE'])
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
         return model, optimizer, exp_lr_scheduler
