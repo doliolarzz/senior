@@ -19,7 +19,7 @@ if __name__ == "__main__":
         'DEVICE': torch.device('cuda:2'),
         'IN_LEN': 5,
         'OUT_LEN': 1,
-        'BATCH_SIZE': 1,
+        'BATCH_SIZE': 6,
     }
 
     k_fold = 1
