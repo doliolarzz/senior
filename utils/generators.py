@@ -101,7 +101,7 @@ class DataGenerator_FCN(DataGenerator):
             
         idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
         self.last_train = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
-        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:], np.searchsorted(global_config['LEVEL_BUCKET'], self.last_train[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:], np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), self.last_train[:, self.in_len:], side=global_config['LEVEL_SIDE'])
 
     def get_val(self, i):
         
@@ -111,4 +111,4 @@ class DataGenerator_FCN(DataGenerator):
 
         idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
         self.last_val = torch.from_numpy(self.get_data(idx)).swapaxes(0,1).to(self.config['DEVICE'])
-        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:], np.searchsorted(global_config['LEVEL_BUCKET'], self.last_val[:, self.in_len:], side=global_config['LEVEL_SIDE'])
+        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:], np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), self.last_val[:, self.in_len:], side=global_config['LEVEL_SIDE'])

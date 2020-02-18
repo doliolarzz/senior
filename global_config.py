@@ -15,6 +15,6 @@ global_config = {
     'LON_MAX': 149.994,
     'MISSINGS': np.load('../weight_npz/missings.npz')['m'],
     'MERGE_WEIGHT': np.load('../weight_npz/weight.npz')['w'] + 1e-3,
-    'LEVEL_BUCKET': [0.2, 10, 20, 30, 50, 80],
+    'LEVEL_BUCKET': [0.2, 10, 30],
     'LEVEL_SIDE': 'right'
 }
