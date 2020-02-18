@@ -27,9 +27,12 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
     if crop is not None:
         h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
+    height = h2 - h1 + 1
+    width = w2 - w1 + 1
+
     files = sorted([file for file in glob.glob(global_config['DATA_PATH'])])
     window_size = config['IN_LEN'] + config['OUT_LEN']
-    picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
+    picked_files = np.random.choice(len(files) - window_size + 1, size)
     picked_files = np.setdiff1d(picked_files, global_config['MISSINGS'])
 
     n_h = int((height - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
@@ -40,10 +43,10 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
     optimizer = torch.optim.Adam([weight], lr=learning_rate)
     
     all_itera = 0
-    pbar = tqdm(total=epochs*int(np.ceil(n / config['BATCH_SIZE'])))
+    pbar = tqdm(total=epochs*int(np.ceil(size / config['BATCH_SIZE'])))
     for e in range(epochs):
         np.random.shuffle(picked_files)
-        for i in range(int(np.ceil(n / config['BATCH_SIZE']))):
+        for i in range(int(np.ceil(size / config['BATCH_SIZE']))):
 
             data = np.zeros((window_size, config['BATCH_SIZE'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
             for b in range(config['BATCH_SIZE']):
