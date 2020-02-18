@@ -15,7 +15,7 @@ from sklearn.metrics import accuracy_score, f1_score
 def k_train_fcn(k_fold, model,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, 
             checkpoint_every=1000, mode='reg', config=None):
-    
+    train_weight = torch.tensor([1, 100, 100, 100], dtype=torch.float).to(config['DEVICE'])
     mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
     cls_loss = cross_entropy2d
 
@@ -59,10 +59,10 @@ def k_train_fcn(k_fold, model,
                 if mode == 'reg':
                     loss = mse_loss(output, train_label)
                 elif mode == 'seg':
-                    loss = cls_loss(output, train_label_cat)
+                    loss = cls_loss(output, train_label_cat, weight=train_weight)
                 elif mode == 'reg_multi':
                     loss = mse_loss(output, train_label)
-                    loss += cls_loss(output, train_label_cat)
+                    loss += cls_loss(output, train_label_cat, weight=train_weight)
                 else:
                     raise Exception('wrong mode')
                 
@@ -100,10 +100,10 @@ def k_train_fcn(k_fold, model,
                             if mode == 'reg':
                                 loss = mse_loss(output, val_label)
                             elif mode == 'seg':
-                                loss = cls_loss(output, val_label_cat, weight=[1, 100, 100, 100])
+                                loss = cls_loss(output, val_label_cat, weight=train_weight)
                             elif mode == 'reg_multi':
                                 loss = mse_loss(output, val_label)
-                                loss += cls_loss(output, val_label_cat, weight=[1, 100, 100, 100])
+                                loss += cls_loss(output, val_label_cat, weight=train_weight)
 
                             val_loss += loss.item()
 
