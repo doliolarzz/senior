@@ -1,6 +1,8 @@
 import numpy as np
 import torch
-from utils.predictor import get_weight_train_data
+import os, glob
+# from utils.predictor import get_weight_train_data
+from utils.units import dbz_mm, get_crop_boundary_idx
 from global_config import global_config
 from tqdm import tqdm
 
@@ -21,18 +23,17 @@ def predict(input, model, config=None):
 
 def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, config=None):
 
-    data = get_weight_train_data(size, crop=crop, config=config)
+    h1, h2, w1, w2 = 0, global_config['DATA_HEIGHT'] - 1, 0, global_config['DATA_WIDTH'] - 1
+    if crop is not None:
+        h1, h2, w1, w2 = get_crop_boundary_idx(crop)
 
-    n, t, height, width = data.shape
-    assert t == config['IN_LEN'] + config['OUT_LEN']
-    input = data[:, :config['IN_LEN']].swapaxes(0, 1)
-    label = data[:, config['IN_LEN']:config['IN_LEN']+config['OUT_LEN']].swapaxes(0, 1)
+    files = sorted([file for file in glob.glob(global_config['DATA_PATH'])])
+    window_size = config['IN_LEN'] + config['OUT_LEN']
+    picked_files = np.random.choice(len(files) - window_size + 1, sample_size)
+    picked_files = np.setdiff1d(picked_files, global_config['MISSINGS'])
 
     n_h = int((height - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
     n_w = int((width - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
-    pred = np.zeros((config['OUT_LEN'], config['BATCH_SIZE'], n_h+1, n_w+1, global_config['IMG_SIZE'], global_config['IMG_SIZE']), dtype=np.float32)
-    
-#     weight = torch.randn(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
     weight = torch.ones(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
     
     mse = torch.nn.MSELoss()
@@ -41,12 +42,20 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
     all_itera = 0
     pbar = tqdm(total=epochs*int(np.ceil(n / config['BATCH_SIZE'])))
     for e in range(epochs):
-    
+        np.random.shuffle(picked_files)
         for i in range(int(np.ceil(n / config['BATCH_SIZE']))):
 
-            pred[:] = 0
+            data = np.zeros((window_size, config['BATCH_SIZE'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
+            for b in range(config['BATCH_SIZE']):
+                s_idx = picked_files[i*config['BATCH_SIZE'] + b]
+                for f, file in enumerate(files[s_idx:s_idx+window_size]):
+                    data[f, b, :] = np.fromfile(file, dtype=np.float32).reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
+            input = data[:config['IN_LEN']]
+            label = data[config['IN_LEN']:]
+
+            pred = np.zeros((config['OUT_LEN'], config['BATCH_SIZE'], n_h+1, n_w+1, global_config['IMG_SIZE'], global_config['IMG_SIZE']), dtype=np.float32)
             i_start = i*config['BATCH_SIZE']
-            i_end = min((i+1)*config['BATCH_SIZE'], n)
+            i_end = min((i+1)*config['BATCH_SIZE'], size)
 
             for h in range(n_h):
                 for w in range(n_w):
