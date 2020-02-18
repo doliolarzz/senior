@@ -100,10 +100,10 @@ def k_train_fcn(k_fold, model,
                             if mode == 'reg':
                                 loss = mse_loss(output, val_label)
                             elif mode == 'seg':
-                                loss = cls_loss(output, val_label_cat)
+                                loss = cls_loss(output, val_label_cat, weight=[1, 100, 100, 100])
                             elif mode == 'reg_multi':
                                 loss = mse_loss(output, val_label)
-                                loss += cls_loss(output, val_label_cat)
+                                loss += cls_loss(output, val_label_cat, weight=[1, 100, 100, 100])
 
                             val_loss += loss.item()
 
