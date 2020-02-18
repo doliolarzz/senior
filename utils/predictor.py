@@ -60,7 +60,7 @@ def get_each_predictions(data, model, config=None):
 
     return pred, label
 
-def get_data(start_fn, crop=None, config=None):
+def get_data(start_pred_fn, crop=None, config=None):
 
     h1, h2, w1, w2 = 0, global_config['DATA_HEIGHT'] - 1, 0, global_config['DATA_WIDTH'] - 1
     if crop is not None:
@@ -70,13 +70,13 @@ def get_data(start_fn, crop=None, config=None):
     idx = 0
     if start_fn != '':
         try:
-            idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_fn)
+            idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_pred_fn)
         except:
             idx = -1
             print('not found')
 
     data = np.zeros((config['IN_LEN'] + global_config['OUT_TARGET_LEN'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
-    for i, file in enumerate(files[idx:idx+config['IN_LEN']+global_config['OUT_TARGET_LEN']]):
+    for i, file in enumerate(files[idx - config['IN_LEN']:idx + global_config['OUT_TARGET_LEN']]):
         data[i, :] = np.fromfile(file, dtype=np.float32).reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))[h1 : h2 + 1, w1 : w2 + 1]
     
     return data
