@@ -36,6 +36,7 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
     n_h = int((height - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
     n_w = int((width - global_config['IMG_SIZE'])/global_config['STRIDE']) + 1
     weight = torch.ones(480, 480, device=config['DEVICE'], dtype=torch.float, requires_grad=True)
+    sigmoid = torch.nn.Sigmoid()
     
     mse = torch.nn.MSELoss()
     optimizer = torch.optim.Adam([weight], lr=learning_rate)
@@ -96,23 +97,23 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
                     h_end = hh*global_config['STRIDE'] + global_config['IMG_SIZE']
                     w_start = ww*global_config['STRIDE']
                     w_end = ww*global_config['STRIDE'] + global_config['IMG_SIZE']
-                    vals[:, h_start:h_end, w_start:w_end] += x[:, hh, ww] * weight[None,:]
-                    counts[:, h_start:h_end, w_start:w_end] += weight[None,:]
+                    vals[:, h_start:h_end, w_start:w_end] += x[:, hh, ww] * sigmoid(weight[None,:])
+                    counts[:, h_start:h_end, w_start:w_end] += sigmoid(weight[None,:])
 
             for hh in range(n_h):
                 h_start = hh*global_config['STRIDE']
                 h_end = hh*global_config['STRIDE'] + global_config['IMG_SIZE']
-                vals[:, h_start:h_end, -global_config['IMG_SIZE']:] += x[:, hh, n_w] * weight[None,:]
-                counts[:, h_start:h_end, -global_config['IMG_SIZE']:] += weight[None,:]
+                vals[:, h_start:h_end, -global_config['IMG_SIZE']:] += x[:, hh, n_w] * sigmoid(weight[None,:])
+                counts[:, h_start:h_end, -global_config['IMG_SIZE']:] += sigmoid(weight[None,:])
 
             for ww in range(n_w):
                 w_start = ww*global_config['STRIDE']
                 w_end = ww*global_config['STRIDE'] + global_config['IMG_SIZE']
-                vals[:, -global_config['IMG_SIZE']:, w_start:w_end] += x[:, n_h, ww] * weight[None,:]
-                counts[:, -global_config['IMG_SIZE']:, w_start:w_end] += weight[None,:]
+                vals[:, -global_config['IMG_SIZE']:, w_start:w_end] += x[:, n_h, ww] * sigmoid(weight[None,:])
+                counts[:, -global_config['IMG_SIZE']:, w_start:w_end] += sigmoid(weight[None,:])
 
-            vals[:, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:] += x[:, n_h, n_w] * weight[None,:]
-            counts[:, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:] += weight[None,:]
+            vals[:, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:] += x[:, n_h, n_w] * sigmoid(weight[None,:])
+            counts[:, -global_config['IMG_SIZE']:, -global_config['IMG_SIZE']:] += sigmoid(weight[None,:])
 
             y_pred = vals / counts
 
@@ -130,4 +131,4 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
 #                 weight.grad.zero_()
     pbar.close()
     
-    return weight.detach().cpu().numpy()
+    return sigmoid(weight).detach().cpu().numpy()
