@@ -74,7 +74,7 @@ if __name__ == "__main__":
     forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1], config=config).to(config['DEVICE'])
     model = EF(encoder, forecaster).to(config['DEVICE'])
     model.load_state_dict(
-        torch.load('./model.pth'))
+        torch.load('/home/warit/senior/experiments/conv_logs/logs_5_1_4_True_02_17_11_35/model_f1_i5000.pth'))
 
-    w = train_weight_model(model, 100, crop=None, epochs=2, learning_rate=1e-2, config=config)
+    w = train_weight_model(model, 500, crop=None, epochs=2, learning_rate=1e-2, config=config)
     np.savez('learnt_weight.npz', w=w)
