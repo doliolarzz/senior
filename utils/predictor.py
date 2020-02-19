@@ -2,7 +2,7 @@ import torch
 import os, glob
 import numpy as np
 from global_config import global_config
-from utils.units import dbz_mm, get_crop_boundary_idx
+from utils.units import get_crop_boundary_idx, mm_dbz, dbz_mm
 import cv2
 from tqdm import tqdm
 
@@ -20,7 +20,7 @@ def predict(input, model, config=None):
     assert output.shape[3] == global_config['IMG_SIZE']
     assert output.shape[4] == global_config['IMG_SIZE']
 
-    return output.cpu().numpy()[:, :, 0]
+    return np.minimum(np.maximum(output.cpu().numpy()[:, :, 0], mm_dbz(0)), mm_dbz(60))
 
 # In (N, t, height, width) 
 # -> Out (out_len, N, n_h, n_w, 480, 480), (out_len, N, height, width)
@@ -68,7 +68,7 @@ def get_data(start_pred_fn, crop=None, config=None):
 
     files = sorted([file for file in glob.glob(global_config['TEST_PATH'])])
     idx = 0
-    if start_fn != '':
+    if start_pred_fn != '':
         try:
             idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_pred_fn)
         except:

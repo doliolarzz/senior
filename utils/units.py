@@ -18,9 +18,9 @@ def get_crop_boundary_idx(crop):
 
 c_back = np.power(200, 5/8)
 def dbz_mm(value):
-    return np.minimum(np.power(10, value*80/16), 1e6) / c_back - 1
+    return np.minimum(np.power(10, value*60/16), 1e6) / c_back - 1
 
-c_f = 16 / (80 * np.log(10))
+c_f = 16 / (60 * np.log(10))
 c_h = 5 / 8 * np.log(200)
 def mm_dbz(value):
     return c_f * (c_h + np.log(value + 1)) 

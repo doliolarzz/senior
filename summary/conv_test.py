@@ -3,8 +3,8 @@ sys.path.insert(0, '../')
 import glob
 import os
 from utils.units import mm_dbz, dbz_mm
-from utils.visualizers import make_gif_color, rainfall_shade
-from utils.evaluators import fp_fn_image_csi, cal_rmse_all, fp_fn_image_csi_muti
+from utils.visualizers import make_gif_color, rainfall_shade, make_gif
+from utils.evaluators import fp_fn_image_csi, cal_rmse_all, fp_fn_image_csi_muti_reg
 from utils.predictor import prepare_testing, get_data
 from global_config import global_config
 from models.model import EF
@@ -16,8 +16,7 @@ import torch
 from collections import OrderedDict
 from models.convLSTM import ConvLSTM
 
-
-def conv_test(model_path, start_pred_fn, in_len, out_len, batch_size, multitask, crop=None):
+def conv_test(model_path, start_pred_fn, test_case, in_len, out_len, batch_size, multitask, crop=None):
 
     config = {
         'DEVICE': torch.device('cuda:0'),
@@ -82,7 +81,7 @@ def conv_test(model_path, start_pred_fn, in_len, out_len, batch_size, multitask,
     label = dbz_mm(label)
     csi = fp_fn_image_csi(pred, label)
     # print('CSI: ', csi)
-    csi_multi = fp_fn_image_csi_muti(pred, label)
+    csi_multi = fp_fn_image_csi_muti_reg(pred, label)
     # print('CSI Multi: ', csi_multi)
     rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred, label)
     # print('rmse_all', rmse)
@@ -91,7 +90,7 @@ def conv_test(model_path, start_pred_fn, in_len, out_len, batch_size, multitask,
 
     if not os.path.exists('./imgs_conv'):
         os.makedirs('./imgs_conv')
-    path = './imgs_conv/conv_{}_{}_{}/'.format(in_len, out_len, multitask)
+    path = './imgs_conv/conv_{}_{}_{}_{}/'.format(test_case, in_len, out_len, multitask)
     try:
         os.makedirs(path)
     except:
@@ -102,10 +101,20 @@ def conv_test(model_path, start_pred_fn, in_len, out_len, batch_size, multitask,
         pass
 
     #Save erros gif
+    errs = np.sqrt(np.square(pred - label))
+    make_gif(errs / errs.max() * 255, path + 'errs.gif')
     #Save pred gif
+    make_gif(pred / 60 * 255, path + 'pred.gif')
     #Save colored pred gif
-    #Save imgs
+    make_gif_color(pred, path + 'pred_colored.gif')
     #Save gt gif
+    make_gif(label / 60 * 255, path + 'gt.gif')
+    #Save colored gt gif
+    make_gif_color(label, path + 'gt_colored.gif')
+    #Save imgs
+    for i in range(pred.shape[0]):
+        cv2.imwrite(path+'imgs/'+str(i)+'.png', 
+                    cv2.cvtColor(np.array(pred[i]/80*255, dtype=np.uint8), cv2.COLOR_GRAY2BGR))
     
     # for i in range(pred.shape[0]):
     #     cv2.imwrite(path+str(i)+'.png',

@@ -61,13 +61,15 @@ def rainfall_shade(im, mode='RGB'):
 
 
 def make_gif(data, fname='test.gif'):
-    img_seq = [Image.fromarray(img.astype('uint8'), 'RGB') for img in data]
+    img_seq = [Image.fromarray(cv2.cvtColor(img.astype('uint8'), cv2.COLOR_GRAY2RGB), 'RGB') for img in data]
     img = img_seq[0]
     img.save(fname, save_all=True, append_images=img_seq[1:], loop=True)
 
 def make_gif_color(data, fname='test.gif'):
     c_imgs = []
     for i in range(data.shape[0]):
-        c_img = rainfall_shade(data[i] / data.max() * 255)
+        c_img = rainfall_shade(data[i] / 80 * 255)
         c_imgs.append(c_img)
-    make_gif(c_imgs, fname)
+    img_seq = [Image.fromarray(img.astype('uint8'), 'RGB') for img in c_imgs]
+    img = img_seq[0]
+    img.save(fname, save_all=True, append_images=img_seq[1:], loop=True)
