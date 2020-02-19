@@ -85,7 +85,7 @@ def fp_fn_image_csi(pred, gt, threshold=0.2):
     return csi
 
 
-def fp_fn_image_csi_muti(pred, gt):
+def fp_fn_image_csi_muti_reg(pred, gt):
     # categorize
     pred_cat = np.searchsorted(global_config['LEVEL_BUCKET'], pred, side=global_config['LEVEL_SIDE'])
     gt_cat = np.searchsorted(global_config['LEVEL_BUCKET'], gt, side=global_config['LEVEL_SIDE'])
@@ -98,6 +98,19 @@ def fp_fn_image_csi_muti(pred, gt):
         fn = np.sum((gt_cat == i) & (pred_cat != i))
         tp = np.sum((gt_cat == i) & (pred_cat == i))
         tn = np.sum((gt_cat != i) & (pred_cat != i))
+
+        all_csi.append(float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100)
+
+    return np.array(all_csi)
+
+def fp_fn_image_csi_muti_seg(pred, gt):
+    all_csi = []
+    for i in range(len(global_config['LEVEL_BUCKET']) + 1):
+        
+        fp = np.sum((gt != i) & (pred == i))
+        fn = np.sum((gt == i) & (pred != i))
+        tp = np.sum((gt == i) & (pred == i))
+        tn = np.sum((gt != i) & (pred != i))
 
         all_csi.append(float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100)
 

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     max_iterations = 1
     LR_step_size = 1000
     gamma = 0.7
-    LR = 1e-4
+    LR = 1e-3
 
     def get_model_set():
         model = FCN8s(n_class=4, n_channel=5).to(config['DEVICE'])

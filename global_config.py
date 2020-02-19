@@ -3,7 +3,7 @@ import numpy as np
 
 global_config = {
     'DATA_PATH': '/mnt/raid0/wni_dataset/*/*/*.bin',
-    'TEST_PATH': '/media/doliolarzz/Ubuntu_data/test/*.bin',
+    'TEST_PATH': '/home/warit/test/*.bin',
     'IMG_SIZE': 480,
     'STRIDE': 120,
     'OUT_TARGET_LEN': 18,

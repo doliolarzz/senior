@@ -7,15 +7,16 @@ from global_config import global_config
 from tensorboardX import SummaryWriter
 from utils.losses import cross_entropy2d
 from utils.generators import DataGenerator_FCN
-from utils.evaluators import fp_fn_image_csi_muti
+from utils.evaluators import fp_fn_image_csi_muti_seg
 from datetime import datetime
 from utils.units import dbz_mm
 from sklearn.metrics import accuracy_score, f1_score
+import cv2
 
 def k_train_fcn(k_fold, model,
             batch_size, max_iterations, save_dir='./logs', eval_every=100, 
-            checkpoint_every=1000, mode='reg', config=None):
-    train_weight = torch.tensor([1, 100, 100, 100], dtype=torch.float).to(config['DEVICE'])
+            checkpoint_every=1000, mode='seg', config=None):
+    train_weight = torch.tensor([1, 10, 10, 10], dtype=torch.float).to(config['DEVICE'])
     mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
     cls_loss = cross_entropy2d
 
@@ -45,7 +46,7 @@ def k_train_fcn(k_fold, model,
         for itera in pbar:
             
             n_train_batch = data_gen.n_train_batch()
-            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 5000))#range(data_gen.n_train_batch()))
+            pbar_b = tqdm(np.random.choice(data_gen.n_train_batch(), 10000))#range(data_gen.n_train_batch()))
             for b in pbar_b:
                 
                 pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
@@ -77,7 +78,7 @@ def k_train_fcn(k_fold, model,
                 
                 train_acc += accuracy_score(label_numpy, pred_numpy)
                 train_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
-                train_csi += fp_fn_image_csi_muti(dbz_mm(output.cpu().detach().numpy()), dbz_mm(train_label.cpu().numpy()))
+                train_csi += fp_fn_image_csi_muti_seg(pred_numpy, label_numpy)
                 train_count += 1
 
                 if i_batch % eval_every == 0:
@@ -112,7 +113,7 @@ def k_train_fcn(k_fold, model,
                             
                             val_acc += accuracy_score(label_numpy, pred_numpy)
                             val_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
-                            val_csi += fp_fn_image_csi_muti(dbz_mm(output.cpu().detach().numpy()), dbz_mm(val_label.cpu().numpy()))
+                            val_csi += fp_fn_image_csi_muti_seg(pred_numpy, label_numpy)
                             val_count += 1
                             pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 20))
 
@@ -145,6 +146,10 @@ def k_train_fcn(k_fold, model,
                             'train': train_csi[i],
                             'valid': val_csi[i]
                         }, i_batch)
+                        
+                    writer.add_image('result/val', torch.tensor(cv2.cvtColor(np.array(np.argmax(output.cpu().detach().numpy(), axis=1)[0] / 4 * 255, dtype=np.uint8)[:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+                    writer.add_image('result/gt', torch.tensor(cv2.cvtColor(np.array(val_label_cat.cpu().numpy()[0, 0] / 4 * 255, dtype=np.uint8)[:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+                    
 
                     train_loss = 0.0
                     train_acc = 0.0
