@@ -81,13 +81,13 @@ def conv_test(model_path, start_pred_fn, in_len, out_len, batch_size, multitask,
     pred = np.maximum(dbz_mm(pred), 0)
     label = dbz_mm(label)
     csi = fp_fn_image_csi(pred, label)
-    print('CSI: ', csi)
+    # print('CSI: ', csi)
     csi_multi = fp_fn_image_csi_muti(pred, label)
-    print('CSI Multi: ', csi_multi)
+    # print('CSI Multi: ', csi_multi)
     rmse, rmse_rain, rmse_non_rain = cal_rmse_all(pred, label)
-    print('rmse_all', rmse)
-    print('rmse_rain', rmse_rain)
-    print('rmse_non_rain', rmse_non_rain)
+    # print('rmse_all', rmse)
+    # print('rmse_rain', rmse_rain)
+    # print('rmse_non_rain', rmse_non_rain)
 
     if not os.path.exists('./imgs_conv'):
         os.makedirs('./imgs_conv')
