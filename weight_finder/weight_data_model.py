@@ -42,7 +42,7 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
     optimizer = torch.optim.Adam([weight], lr=learning_rate)
     
     all_itera = 0
-    pbar = tqdm(total=epochs*int(np.ceil(size / config['BATCH_SIZE'])))
+    pbar = tqdm(total=epochs*int(np.floor(size / config['BATCH_SIZE'])))
     for e in range(epochs):
         picked_files = None
         while True:
@@ -51,7 +51,7 @@ def train_weight_model(model, size, crop=None, epochs=1, learning_rate=1e-5, con
             if picked_files.shape[0] == size:
                 break
         np.random.shuffle(picked_files) 
-        for i in range(int(np.ceil(size / config['BATCH_SIZE']))):
+        for i in range(int(np.floor(size / config['BATCH_SIZE']))):
 
             data = np.zeros((window_size, config['BATCH_SIZE'], h2 - h1 + 1, w2 - w1 + 1), dtype=np.float32)
             for b in range(config['BATCH_SIZE']):
