@@ -9,7 +9,10 @@
 
 
 import numpy as np
+import torch
 from global_config import global_config
+import numba
+from numba import prange
 
 def hex2Rgb(tn_rgb):
     return list(int(tn_rgb[i:i+2], 16) for i in (0, 2, 4))
@@ -66,7 +69,7 @@ def fp_fn_image(gt, pred, config=None, threshold=125):
     return error
 
 
-def fp_fn_image_csi(pred, gt, threshold=0.2):
+def fp_fn_image_csi(pred, gt, threshold=1):
     # categorize
     gt, pred = gt.copy(), pred.copy()
     gt[gt < threshold] = 0
@@ -84,26 +87,37 @@ def fp_fn_image_csi(pred, gt, threshold=0.2):
 
     return csi
 
-
-def fp_fn_image_csi_muti_reg(pred, gt):
+def fp_fn_image_csi_muti(pred, gt):
+    bucket = global_config['LEVEL_BUCKET']
+    side = global_config['LEVEL_SIDE']
     # categorize
-    pred_cat = np.searchsorted(global_config['LEVEL_BUCKET'], pred, side=global_config['LEVEL_SIDE'])
-    gt_cat = np.searchsorted(global_config['LEVEL_BUCKET'], gt, side=global_config['LEVEL_SIDE'])
+    pred_cat = np.searchsorted(bucket, pred, side=side)
+    gt_cat = np.searchsorted(bucket, gt, side=side)
 
     # evaluate
     all_csi = []
-    for i in range(len(global_config['LEVEL_BUCKET']) + 1):
-        
-        fp = np.sum((gt_cat != i) & (pred_cat == i))
-        fn = np.sum((gt_cat == i) & (pred_cat != i))
-        tp = np.sum((gt_cat == i) & (pred_cat == i))
-        tn = np.sum((gt_cat != i) & (pred_cat != i))
+    w = []
+    for i in range(len(bucket) + 1):
+        gt_e = gt_cat == i
+        gt_ne = gt_cat != i
+        pred_e = pred_cat == i
+        pred_ne = pred_cat != i
+
+        fp = np.sum(gt_ne & pred_e)
+        fn = np.sum(gt_e & pred_ne)
+        tp = np.sum(gt_e & pred_e)
+        tn = np.sum(gt_ne & pred_ne)
 
         all_csi.append(float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100)
+        w.append(np.sum(gt_e)/gt_cat.size)
 
-    return np.array(all_csi)
+    csis = np.array(all_csi)
+    return csis, np.sum(csis * np.array(w))
 
 def fp_fn_image_csi_muti_seg(pred, gt):
+    # evaluate
+    pred = np.array(pred, dtype=np.int)
+    gt = np.array(gt, dtype=np.int)
     all_csi = []
     for i in range(len(global_config['LEVEL_BUCKET']) + 1):
         
@@ -143,7 +157,7 @@ def fp_fn_image_hit(gt, pred, threshold, mask=None):
 def cal_rmse(pred, label):
     return np.sqrt(np.mean(np.square(pred - label)))
 
-def cal_rmse_all(pred, label, thres=0.2):
+def cal_rmse_all(pred, label, thres=1):
     pred = pred.reshape(-1)
     label = label.reshape(-1)
 
@@ -154,3 +168,42 @@ def cal_rmse_all(pred, label, thres=0.2):
     rmse_non_rain = cal_rmse(pred[~mask], label[~mask])
 
     return rmse, rmse_rain, rmse_non_rain
+
+def torch_cal_rmse(yhat,y):
+    return torch.sqrt(torch.mean((yhat-y)**2))
+
+def torch_cal_rmse_all(pred, label, thres=1):
+
+    assert pred.size() == label.size()
+    
+    mask = label>thres
+
+    rmse = torch_cal_rmse(pred, label)
+    rmse_rain = torch_cal_rmse(pred[mask], label[mask])
+    rmse_non_rain = torch_cal_rmse(pred[~mask], label[~mask])
+
+    return rmse, rmse_rain, rmse_non_rain
+
+def torch_csi_muti(pred, gt):
+    bucket = [0] + global_config['LEVEL_BUCKET'].tolist() + [1000]
+
+    # evaluate
+    all_csi = []
+    w = []
+    for i in range(len(bucket) - 1):
+
+        gt_e = (bucket[i] <= gt) & (gt < bucket[i+1])
+        gt_ne = ~gt_e
+        pred_e = (bucket[i] <= pred) & (gt < bucket[i+1])
+        pred_ne = ~pred_e
+
+        fp = torch.sum(gt_ne & pred_e).cpu().numpy()
+        fn = torch.sum(gt_e & pred_ne).cpu().numpy()
+        tp = torch.sum(gt_e & pred_e).cpu().numpy()
+        tn = torch.sum(gt_ne & pred_ne).cpu().numpy()
+
+        all_csi.append(float(tp + 1e-4) / (fp + fn + tp + 1e-4) * 100)
+        w.append(torch.sum(gt_e)/gt.numel())
+
+    csis = np.array(all_csi)
+    return csis, np.sum(csis * np.array(w))

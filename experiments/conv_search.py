@@ -1,11 +1,15 @@
 import os
 from tqdm import tqdm
 
-device = 'cuda:1'
-in_len = [2, 5]
-out_len = [1, 18]
-multitask = [True, False]
-batch_size = 4
+device = 'cuda:0'
+# in_len = [2, 5]
+# out_len = [1, 18]
+# multitask = [True, False]
+# batch_size = 4
+in_len = [5]
+out_len = [10]
+multitask = [False]
+batch_size = 2
 
 # with tqdm(total=len(in_len)*len(out_len)*len(multitask)) as pbar:
 for il in in_len:

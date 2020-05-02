@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     k_fold = 1
     batch_size = config['BATCH_SIZE']
-    max_iterations = 1
+    max_iterations = 3
     test_iteration_interval = 1000
     test_and_save_checkpoint_iterations = 1000
     LR_step_size = 1000
@@ -52,11 +52,11 @@ if __name__ == "__main__":
         ],
 
         [
-            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 96, 96),
+            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 168, 126),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]
@@ -73,11 +73,11 @@ if __name__ == "__main__":
         ],
 
         [
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 96, 96),
+            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 168, 126),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]

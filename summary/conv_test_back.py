@@ -33,11 +33,11 @@ def conv_test(model_path, start_pred_fn, test_case, in_len, out_len, batch_size,
         ],
 
         [
-            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 168, 126),
+            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 96, 96),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]
@@ -54,11 +54,11 @@ def conv_test(model_path, start_pred_fn, test_case, in_len, out_len, batch_size,
         ],
 
         [
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 16, 16),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 32, 32),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 168, 126),
+            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 96, 96),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]
@@ -71,35 +71,12 @@ def conv_test(model_path, start_pred_fn, test_case, in_len, out_len, batch_size,
     model.load_state_dict(
         torch.load(model_path, map_location='cuda'))
 
-    files = sorted([file for file in glob.glob(global_config['TEST_PATH'])])
-    idx = 0
-    if start_pred_fn != '':
-        try:
-            idx = next(i for i,f in enumerate(files) if os.path.basename(f) == start_pred_fn)
-        except:
-            idx = -1
-            print('not found')
-    scale_div=4
-    data = np.zeros((config['IN_LEN'] + global_config['OUT_TARGET_LEN'], int(global_config['DATA_HEIGHT']/scale_div), int((global_config['DATA_WIDTH'] - 40)/scale_div)), dtype=np.float32)
-    for i, file in enumerate(files[idx - config['IN_LEN']:idx + global_config['OUT_TARGET_LEN']]):
-        fd = np.fromfile(file, dtype=np.float32).reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))[:,20:-20]
-        fd = cv2.resize(fd, (int((global_config['DATA_WIDTH'] - 40)/scale_div), int(global_config['DATA_HEIGHT']/scale_div)), interpolation = cv2.INTER_AREA)
-        data[i, :] = fd
-    
+    data = get_data(start_pred_fn, crop=crop, config=config)
     data = mm_dbz(data)
-    input = data[:in_len]
-    label = data[in_len:]
-    preds = []
-    with torch.no_grad():
-        input = torch.from_numpy(input[:, None, None]).to(config['DEVICE'])
-        for i in range(18):
-            pred = model(input)
-            pred[pred<0.2 + 0.035*i] -= 0.04*i
-            pred = torch.clamp(pred, min=mm_dbz(0), max=mm_dbz(60))
-            preds.append(pred.detach().cpu().numpy()[0, 0, 0])
-            input = torch.cat((input[1:], pred), 0)
-    pred = np.array(preds)
-    print(pred.shape, label.shape)
+
+    weight = global_config['MERGE_WEIGHT']
+
+    pred, label = prepare_testing(data, model, weight=weight, config=config)
     pred = np.maximum(dbz_mm(pred), 0)
     label = dbz_mm(label)
     csi = fp_fn_image_csi(pred, label)

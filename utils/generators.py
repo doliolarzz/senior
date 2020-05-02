@@ -5,116 +5,130 @@ import numpy as np
 from global_config import global_config
 import itertools
 from utils.units import mm_dbz, get_crop_boundary_idx
+from multiprocessing import Pool
 np.random.seed(42)
 
 class DataGenerator():
 
-    def __init__(self, data_path, k_fold, batch_size, in_len, out_len, windows_size, config):
+    def __init__(self, data_path, config):
 
         self.config = config
-        h_pos = [i for i in range(0, global_config['DATA_HEIGHT'] - global_config['IMG_SIZE'], global_config['STRIDE'])]
-        h_pos.append(global_config['DATA_HEIGHT'] - global_config['IMG_SIZE'])
-        w_pos = [i for i in range(0, global_config['DATA_WIDTH'] - global_config['IMG_SIZE'], global_config['STRIDE'])]
-        w_pos.append(global_config['DATA_WIDTH'] - global_config['IMG_SIZE'])
-        self.hw_pos = [[h, w] for h in h_pos for w in w_pos]
-        self.n_hw_pos = len(self.hw_pos)
-
-        self.k_fold = k_fold
-        self.batch_size = batch_size
-        self.in_len = in_len
-        self.out_len = out_len
-        self.windows_size = windows_size
-        self.current_k = 1
+        self.batch_size = config['BATCH_SIZE']
+        self.in_len = config['IN_LEN']
+        self.out_len = config['OUT_LEN']
+        self.windows_size = config['IN_LEN'] + config['OUT_LEN']
+        self.windows_size_test = config['IN_LEN'] + global_config['OUT_TARGET_LEN']
         self.files = sorted([file for file in glob.glob(data_path)])
-        self.n_files = len(self.files) - windows_size + 1
+        self.n_files = len(self.files) - self.windows_size + 1
+        self.n_val = int(self.n_files / 5)
         self.n_test = int(self.n_files / 5)
-        self.n_val = self.n_files - int(self.n_files / 2) - self.n_test
-        self.set_k(1)
-        self.last_train = None
-        self.last_val = None
-
-    def set_k(self, k):
-        self.current_k = max(min(k, self.k_fold), 1)
-        self.current_idx = int(self.n_files / 2) + int(self.n_val * (k - 1) / self.k_fold)
+        self.n_train = self.n_files - self.n_val - self.n_test
+        self.last_data = None
+        self.train_indices = np.arange(self.n_train)
+        self.train_indices = np.setdiff1d(self.train_indices, global_config['MISSINGS'])
+        self.val_indices = np.arange(self.n_val) + self.n_train
+        self.val_indices = np.setdiff1d(self.val_indices, global_config['MISSINGS'])
+        self.test_indices = np.arange(self.n_test) + self.n_train + self.n_val
+        self.test_indices = np.setdiff1d(self.test_indices, global_config['MISSINGS'])
         self.shuffle()
 
+    def read_resize(self, p):
+        (i, h, w) = p
+        f = np.fromfile(self.files[i], dtype=np.float32) \
+            .reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))
+        return cv2.resize(f, (w, h), interpolation = cv2.INTER_AREA)
+
     def get_data(self, indices):
-        sliced_data = np.zeros((self.windows_size, len(indices), global_config['IMG_SIZE'], global_config['IMG_SIZE']), dtype=np.float32)
-        for i, [idx, ch] in enumerate(indices):
+        if self.config['SCALE'] is None:
+            h = self.config['SIZEH']
+            w = self.config['SIZEW']
+        else:
+            scale = self.config['SCALE']
+            h = int(global_config['DATA_HEIGHT'] * scale)
+            w = int(global_config['DATA_WIDTH'] * scale)
+        sliced_data = np.zeros((len(indices), self.windows_size, h, w), dtype=np.float32)
+        for i, idx in enumerate(indices):
             for j in range(self.windows_size):
-                h, w = self.hw_pos[ch]
-                sliced_data[j, i] = np.fromfile(self.files[idx + j], dtype=np.float32).reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))[h : h + global_config['IMG_SIZE'], w : w + global_config['IMG_SIZE']]
+                f = np.fromfile(self.files[idx + j], dtype=np.float32) \
+                    .reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))
+                sliced_data[i, j] = \
+                    cv2.resize(f, (w, h), interpolation = cv2.INTER_AREA)
                 
-        return mm_dbz(sliced_data)
+        return ((mm_dbz(sliced_data) - global_config['NORM_MIN']) / global_config['NORM_DIV'])[:, :, 6:-6, 1: -1]
+
+    def get_data_indices(self, idx):
+
+        if self.last_data is not None:
+            for i in self.last_data:
+                del i
+            torch.cuda.empty_cache()
+
+        self.last_data = []
+        data = self.get_data(idx)
+        self.last_data.append(torch.from_numpy(data[:, :self.in_len].swapaxes(0, 1)).to(self.config['DEVICE']))
+        self.last_data.append(torch.from_numpy(data[:, self.in_len:].swapaxes(0, 1)).to(self.config['DEVICE']))
+        for i in range(len(self.last_data)):
+            self.last_data[i] = self.last_data[i][:, :, None]
+        #S, B, C, H, W
+        return tuple(self.last_data)
 
     def get_train(self, i):
-
-        if self.last_train is not None:
-            del self.last_train
-            torch.cuda.empty_cache()
-            
         idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
-        self.last_train = torch.from_numpy(self.get_data(idx)).to(self.config['DEVICE'])
-        return self.last_train[:self.in_len,:,None], self.last_train[self.in_len:,:,None]
+        return self.get_data_indices(idx)
 
     def get_val(self, i):
-        
-        if self.last_val is not None:
-            del self.last_val
+        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
+        return self.get_data_indices(idx)
+
+    def get_data_test(self, indices):
+
+        if self.config['SCALE'] is None:
+            h = self.config['SIZEH']
+            w = self.config['SIZEW']
+        else:
+            scale = self.config['SCALE']
+            h = int(global_config['DATA_HEIGHT'] * scale)
+            w = int(global_config['DATA_WIDTH'] * scale)
+        sliced_input = np.zeros((len(indices), self.config['IN_LEN'], h, w), dtype=np.float32)
+        sliced_label = np.zeros((len(indices), global_config['OUT_TARGET_LEN'], global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']), dtype=np.float32)
+        for i, idx in enumerate(indices):
+            for j in range(self.config['IN_LEN']):
+                f = np.fromfile(self.files[idx + j], dtype=np.float32) \
+                    .reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))
+                sliced_input[i, j] = \
+                    cv2.resize(f, (w, h), interpolation = cv2.INTER_AREA)
+                
+        for i, idx in enumerate(indices):
+            for j in range(global_config['OUT_TARGET_LEN']):
+                sliced_label[i, j] = np.fromfile(self.files[idx + j], dtype=np.float32) \
+                    .reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))
+                
+        sliced_input = (mm_dbz(sliced_input) - global_config['NORM_MIN']) / global_config['NORM_DIV']
+
+        if self.last_data is not None:
+            for i in self.last_data:
+                del i
             torch.cuda.empty_cache()
 
-        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
-        self.last_val = torch.from_numpy(self.get_data(idx)).to(self.config['DEVICE'])
-        return self.last_val[:self.in_len,:,None], self.last_val[self.in_len:,:,None]
+        self.last_data = []
+        self.last_data.append(torch.from_numpy(sliced_input.swapaxes(0, 1)[:, :, None]).to(self.config['DEVICE']))
+        
+        self.last_data.append(sliced_label.swapaxes(0, 2).swapaxes(1, 2))
+
+        return tuple(self.last_data)
+
+    def get_test(self, i):
+        idx = self.test_indices[i * self.batch_size : min((i+1) * self.batch_size, self.test_indices.shape[0])]
+        return self.get_data_test(idx)
 
     def shuffle(self):
-        idx_train = np.arange(self.current_idx)
-        idx_train = np.setdiff1d(idx_train, global_config['MISSINGS'])
-        idx_hw = np.arange(self.n_hw_pos)
-        self.train_indices = np.hstack([np.repeat(idx_train[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_train.shape[0])[:,None]])
         np.random.shuffle(self.train_indices)
 
-        val_size = int(self.n_val / self.k_fold)
-        if self.k_fold == self.current_k:
-            val_size += self.n_val % self.k_fold
-        idx_val = np.arange(val_size) + self.current_idx
-        idx_val = np.setdiff1d(idx_val, global_config['MISSINGS'])
-        idx_hw = np.arange(self.n_hw_pos)
-        self.val_indices = np.hstack([np.repeat(idx_val[:,None], idx_hw.shape[0], axis=0), np.tile(idx_hw, idx_val.shape[0])[:,None]])
-        
     def n_train_batch(self):
         return int(np.ceil(self.train_indices.shape[0]/self.batch_size))
 
     def n_val_batch(self):
         return int(np.ceil(self.val_indices.shape[0]/self.batch_size))
 
-class DataGenerator_FCN(DataGenerator):
-
-    def __init__(self, data_path, k_fold, batch_size, in_len, out_len, windows_size, config):
-        super().__init__(data_path, k_fold, batch_size, in_len, out_len, windows_size, config)
-
-    def get_train(self, i):
-
-        if self.last_train is not None:
-            del self.last_train
-            torch.cuda.empty_cache()
-            
-        idx = self.train_indices[i * self.batch_size : min((i+1) * self.batch_size, self.train_indices.shape[0])]
-        temp_data = self.get_data(idx).swapaxes(0,1)
-        self.last_train = torch.from_numpy(temp_data).to(self.config['DEVICE'])
-        cat_data = np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), temp_data[:, self.in_len:], side=global_config['LEVEL_SIDE'])
-        cat_data = torch.from_numpy(cat_data).to(self.config['DEVICE'])
-        return self.last_train[:, :self.in_len], self.last_train[:, self.in_len:], cat_data
-
-    def get_val(self, i):
-        
-        if self.last_val is not None:
-            del self.last_val
-            torch.cuda.empty_cache()
-
-        idx = self.val_indices[i * self.batch_size : min((i+1) * self.batch_size, self.val_indices.shape[0])]
-        temp_data = self.get_data(idx).swapaxes(0,1)
-        self.last_val = torch.from_numpy(temp_data).to(self.config['DEVICE'])
-        cat_data = np.searchsorted(mm_dbz(global_config['LEVEL_BUCKET']), temp_data[:, self.in_len:], side=global_config['LEVEL_SIDE'])
-        cat_data = torch.from_numpy(cat_data).to(self.config['DEVICE'])
-        return self.last_val[:, :self.in_len], self.last_val[:, self.in_len:], cat_data
+    def n_test_batch(self):
+        return int(np.ceil(self.test_indices.shape[0]/self.batch_size))

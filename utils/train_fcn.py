@@ -7,16 +7,16 @@ from global_config import global_config
 from tensorboardX import SummaryWriter
 from utils.losses import cross_entropy2d
 from utils.generators import DataGenerator_FCN
-from utils.evaluators import fp_fn_image_csi_muti_seg
+from utils.evaluators import fp_fn_image_csi_muti_reg
 from datetime import datetime
 from utils.units import dbz_mm
 from sklearn.metrics import accuracy_score, f1_score
 import cv2
 
 def k_train_fcn(k_fold, model,
-            batch_size, max_iterations, save_dir='./logs', eval_every=100, 
-            checkpoint_every=1000, mode='seg', config=None):
-    train_weight = torch.tensor([1, 10, 10, 10], dtype=torch.float).to(config['DEVICE'])
+            batch_size, max_iterations, save_dir='./logs', eval_every=50, 
+            checkpoint_every=1000, mode='reg', config=None):
+    train_weight = torch.tensor([1, 200, 3500, 20000], dtype=torch.float).to(config['DEVICE'])
     mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
     cls_loss = cross_entropy2d
 
@@ -51,21 +51,23 @@ def k_train_fcn(k_fold, model,
                 
                 pbar.set_description("Fold %d Training at batch %d / %d" % (k, i_batch, n_train_batch))
 
-                train_data, train_label, train_label_cat = data_gen.get_train(b)
+                train_data, train_label = data_gen.get_train(b)
+                #train_data, train_label, train_label_cat = data_gen.get_train(b)
                 k_model.train()
                 optimizer.zero_grad()
                 output = k_model(train_data)
-
-                loss = None
-                if mode == 'reg':
-                    loss = mse_loss(output, train_label)
-                elif mode == 'seg':
-                    loss = cls_loss(output, train_label_cat, weight=train_weight)
-                elif mode == 'reg_multi':
-                    loss = mse_loss(output, train_label)
-                    loss += cls_loss(output, train_label_cat, weight=train_weight)
-                else:
-                    raise Exception('wrong mode')
+#                 print(train_label.size())
+                output = output[:, 0]
+#                 loss = None
+#                 if mode == 'reg':
+                loss = mse_loss(output, train_label[:, 0])
+#                 elif mode == 'seg':
+#                     loss = cls_loss(output, train_label_cat, weight=train_weight)
+#                 elif mode == 'reg_multi':
+#                     loss = mse_loss(output, train_label)
+#                     loss += cls_loss(output, train_label_cat, weight=train_weight)
+#                 else:
+#                     raise Exception('wrong mode')
                 
                 loss.backward()
                 # torch.nn.utils.clip_grad_value_(k_model.parameters(), clip_value=50.0)
@@ -73,12 +75,13 @@ def k_train_fcn(k_fold, model,
                 lr_scheduler.step()
                 train_loss += loss.item()
 
-                pred_numpy = np.argmax(output.cpu().detach().numpy(), axis=1).flatten()
-                label_numpy = train_label_cat.cpu().numpy().flatten()
+#                 pred_numpy = output.cpu().max(1)[1].detach().numpy().flatten()
+#                 label_numpy = train_label_cat.cpu().numpy().flatten()
                 
-                train_acc += accuracy_score(label_numpy, pred_numpy)
-                train_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
-                train_csi += fp_fn_image_csi_muti_seg(pred_numpy, label_numpy)
+#                 train_acc += accuracy_score(label_numpy, pred_numpy)
+#                 train_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
+#                 train_csi += fp_fn_image_csi_muti_reg(pred_numpy, label_numpy)
+                train_csi += fp_fn_image_csi_muti_reg(dbz_mm(output.detach().cpu().numpy()), dbz_mm(train_label[:, 0].detach().cpu().numpy()))
                 train_count += 1
 
                 if i_batch % eval_every == 0:
@@ -94,26 +97,28 @@ def k_train_fcn(k_fold, model,
                         n_val_batch = data_gen.n_val_batch()
 
                         for ib_val, b_val in enumerate(np.random.choice(n_val_batch, 20)): #range(n_val_batch)
-                            val_data, val_label, val_label_cat = data_gen.get_val(b_val)
+                            val_data, val_label = data_gen.get_val(b_val)
+#                             val_data, val_label, val_label_cat = data_gen.get_val(b_val)
                             output = k_model(val_data)
-
-                            loss = None
-                            if mode == 'reg':
-                                loss = mse_loss(output, val_label)
-                            elif mode == 'seg':
-                                loss = cls_loss(output, val_label_cat, weight=train_weight)
-                            elif mode == 'reg_multi':
-                                loss = mse_loss(output, val_label)
-                                loss += cls_loss(output, val_label_cat, weight=train_weight)
+                            output = output[:, 0]
+                            loss = mse_loss(output, val_label[:, 0])
+#                             loss = None
+#                             if mode == 'reg':
+#                                 loss = mse_loss(output, val_label)
+#                             elif mode == 'seg':
+#                                 loss = cls_loss(output, val_label_cat, weight=train_weight)
+#                             elif mode == 'reg_multi':
+#                                 loss = mse_loss(output, val_label)
+#                                 loss += cls_loss(output, val_label_cat, weight=train_weight)
 
                             val_loss += loss.item()
-
-                            pred_numpy = np.argmax(output.cpu().detach().numpy(), axis=1).flatten()
-                            label_numpy = val_label_cat.cpu().numpy().flatten()
                             
-                            val_acc += accuracy_score(label_numpy, pred_numpy)
-                            val_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
-                            val_csi += fp_fn_image_csi_muti_seg(pred_numpy, label_numpy)
+#                             pred_numpy = output.cpu().max(1)[1].detach().numpy().flatten()
+#                             label_numpy = val_label_cat.cpu().numpy().flatten()
+                            
+#                             val_acc += accuracy_score(label_numpy, pred_numpy)
+#                             val_f1 += f1_score(label_numpy, pred_numpy, average='macro', zero_division=1)
+                            val_csi += fp_fn_image_csi_muti_reg(dbz_mm(output.detach().cpu().numpy()), dbz_mm(val_label[:, 0].detach().cpu().numpy()))
                             val_count += 1
                             pbar.set_description("Fold %d Validating at batch %d / %d" % (k, ib_val, 20))
 
@@ -131,15 +136,15 @@ def k_train_fcn(k_fold, model,
                         'valid': val_loss
                     }, i_batch)
 
-                    writer.add_scalars('f1/'+str(k), {
-                        'train': train_f1,
-                        'valid': val_f1
-                    }, i_batch)
+#                     writer.add_scalars('f1/'+str(k), {
+#                         'train': train_f1,
+#                         'valid': val_f1
+#                     }, i_batch)
 
-                    writer.add_scalars('acc/'+str(k), {
-                        'train': train_acc,
-                        'valid': val_acc
-                    }, i_batch)
+#                     writer.add_scalars('acc/'+str(k), {
+#                         'train': train_acc,
+#                         'valid': val_acc
+#                     }, i_batch)
 
                     for i in range(train_csi.shape[0]):
                         writer.add_scalars('csi_'+str(i)+'/'+str(k), {
@@ -147,8 +152,11 @@ def k_train_fcn(k_fold, model,
                             'valid': val_csi[i]
                         }, i_batch)
                         
-                    writer.add_image('result/val', torch.tensor(cv2.cvtColor(np.array(np.argmax(output.cpu().detach().numpy(), axis=1)[0] / 4 * 255, dtype=np.uint8)[:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
-                    writer.add_image('result/gt', torch.tensor(cv2.cvtColor(np.array(val_label_cat.cpu().numpy()[0, 0] / 4 * 255, dtype=np.uint8)[:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+#                     writer.add_image('result/val', torch.tensor(cv2.cvtColor(np.array(output.cpu().max(1)[1].detach().numpy() / 4 * 255, dtype=np.uint8)[0,:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+#                     writer.add_image('result/gt', torch.tensor(cv2.cvtColor(np.array(val_label_cat.cpu().numpy()[0, 0] / 4 * 255, dtype=np.uint8)[:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+                    
+                    writer.add_image('result/val', torch.tensor(cv2.cvtColor(np.array(dbz_mm(output.detach().cpu().numpy()) / 60 * 255, dtype=np.uint8)[0,:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
+                    writer.add_image('result/gt', torch.tensor(cv2.cvtColor(np.array(dbz_mm(val_label[:, 0].cpu().numpy()) / 60 * 255, dtype=np.uint8)[0,:,:,None], cv2.COLOR_GRAY2RGB).swapaxes(0,2)), i_batch)
                     
 
                     train_loss = 0.0

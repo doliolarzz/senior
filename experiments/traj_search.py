@@ -1,18 +1,16 @@
 import os
 from tqdm import tqdm
 
-device = 'cuda:1'
-in_len = [5]
-out_len = [1, 18]
-modes = ['seg']
-# modes = ['reg', 'seg', 'reg_multi']
-batch_size = 4
+device = 'cuda:0'
+in_len = [4]
+out_len = [10]
+multitask = [False]
+batch_size = 2
 
-# with tqdm(total=len(in_len)*len(out_len)*len(multitask)) as pbar:
 for il in in_len:
     for ol in out_len:
-        for mt in modes:
-            cmdStr = 'python3 fcn.py --name={} --device={} --in={} --out={} --batchsize={} --mode={}'.format(
+        for mt in multitask:
+            cmdStr = 'python3 traj.py --name={} --device={} --in={} --out={} --batchsize={} --multitask={}'.format(
                 '_'.join([str(il), str(ol), str(batch_size), str(mt)]),
                 device,
                 il,
@@ -23,7 +21,4 @@ for il in in_len:
             # pbar.set_description('Executing:' + cmdStr)
             os.system(cmdStr)
             # pbar.update(1)
-            break
-        break
-    break
 
