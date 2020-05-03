@@ -6,10 +6,11 @@ from torch.optim import lr_scheduler
 from models.encoder import Encoder
 from models.forecaster import Forecaster
 from models.model import EF
-from utils.train import k_train
+from utils.trainer import Trainer
 from global_config import global_config
 from collections import OrderedDict
 from models.convLSTM import ConvLSTM
+from utils.generators import DataGenerator
 
 if __name__ == "__main__":
 
@@ -32,6 +33,7 @@ if __name__ == "__main__":
         'IN_LEN': int(args['in']),
         'OUT_LEN': int(args['out']),
         'BATCH_SIZE': int(args['batchsize']),
+        'SCALE': 0.2,
     }
 
     k_fold = 1
@@ -43,6 +45,7 @@ if __name__ == "__main__":
     gamma = 0.7
     LR = 1e-4
     mse_loss = torch.nn.MSELoss().to(config['DEVICE'])
+    mae_loss = torch.nn.L1Loss().to(config['DEVICE'])
 
     convlstm_encoder_params = [
         [
@@ -52,11 +55,11 @@ if __name__ == "__main__":
         ],
 
         [
-            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 168, 126),
+            ConvLSTM(input_channel=8, num_filter=64, b_h_w=(batch_size, 132, 102),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 44, 34),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 22, 17),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]
@@ -73,22 +76,26 @@ if __name__ == "__main__":
         ],
 
         [
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 28, 21),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 22, 17),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 56, 42),
+            ConvLSTM(input_channel=192, num_filter=192, b_h_w=(batch_size, 44, 34),
                     kernel_size=3, stride=1, padding=1, config=config),
-            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 168, 126),
+            ConvLSTM(input_channel=64, num_filter=64, b_h_w=(batch_size, 132, 102),
                     kernel_size=3, stride=1, padding=1, config=config),
         ]
     ]
 
-    def get_model_set():
-        encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(config['DEVICE'])
-        forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1], config=config).to(config['DEVICE'])
-        encoder_forecaster = EF(encoder, forecaster).to(config['DEVICE'])
-        optimizer = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR)
-        exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=LR_step_size, gamma=gamma)
-        return encoder_forecaster, optimizer, exp_lr_scheduler
-
-    k_train(k_fold, get_model_set, mse_loss, 
-                batch_size, max_iterations, save_dir=logs_name, multitask=multitask, config=config)
+    data_loader = DataGenerator(data_path=global_config['DATA_PATH'], config=config)
+    
+    encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(config['DEVICE'])
+    forecaster = Forecaster(convlstm_forecaster_params[0], convlstm_forecaster_params[1], config=config).to(config['DEVICE'])
+    encoder_forecaster = EF(encoder, forecaster).to(config['DEVICE'])
+    optim = torch.optim.Adam(encoder_forecaster.parameters(), lr=LR)
+    trainer = Trainer(
+        config=config,
+        model=encoder_forecaster,
+        optimizer=optim,
+        data_loader=data_loader,
+        save_dir=logs_name
+    )
+    trainer.train()
