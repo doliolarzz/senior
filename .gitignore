@@ -201,3 +201,4 @@ ipython_config.py
 *.bmp
 logs_*/
 imgs_*/
+case_result/

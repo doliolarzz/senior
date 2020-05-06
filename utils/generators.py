@@ -28,7 +28,7 @@ class DataGenerator():
         self.train_indices = np.setdiff1d(self.train_indices, global_config['MISSINGS'])
         self.val_indices = np.arange(self.n_val) + self.n_train
         self.val_indices = np.setdiff1d(self.val_indices, global_config['MISSINGS'])
-        self.test_indices = np.arange(self.n_test) + self.n_train + self.n_val
+        self.test_indices = np.arange(self.n_test) + self.n_train #+ self.n_val
         self.test_indices = np.setdiff1d(self.test_indices, global_config['MISSINGS'])
         self.shuffle()
 
@@ -103,7 +103,7 @@ class DataGenerator():
                 sliced_label[i, j] = np.fromfile(self.files[idx + j], dtype=np.float32) \
                     .reshape((global_config['DATA_HEIGHT'], global_config['DATA_WIDTH']))
                 
-        sliced_input = (mm_dbz(sliced_input) - global_config['NORM_MIN']) / global_config['NORM_DIV']
+        sliced_input = ((mm_dbz(sliced_input) - global_config['NORM_MIN']) / global_config['NORM_DIV'])[:, :, 6:-6, 1: -1]
 
         if self.last_data is not None:
             for i in self.last_data:
@@ -112,8 +112,7 @@ class DataGenerator():
 
         self.last_data = []
         self.last_data.append(torch.from_numpy(sliced_input.swapaxes(0, 1)[:, :, None]).to(self.config['DEVICE']))
-        
-        self.last_data.append(sliced_label.swapaxes(0, 2).swapaxes(1, 2))
+        self.last_data.append(sliced_label)
 
         return tuple(self.last_data)
 
